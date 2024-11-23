@@ -1,5 +1,6 @@
 import { IDTokenPayload } from '../../entity/token';
 import { clientError } from '../errors/error';
+import { Buffer } from 'buffer';
 
 /**
  * Validates an S3 object key.

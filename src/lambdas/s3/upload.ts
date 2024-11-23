@@ -4,10 +4,9 @@ import { AppConfig } from '../../../config/config';
 import { clientError, serverError } from '../../errors/error';
 import { setHeadersPost } from '../../wrapper/response-wrapper';
 import { UploadRequest } from '../../../entity/file';
-import * as base64 from 'base64-js';
+import { Buffer } from 'buffer';
 import * as crypto from 'crypto';
 
-// Initialize Config and S3 Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });
 
@@ -17,7 +16,6 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
 
         const bucketName = config.bucketName;
 
-        // Parse and validate the request body
         if (!event.body) {
             return clientError(400, 'Request body is missing');
         }
@@ -28,7 +26,6 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
             return clientError(400, 'Invalid request payload: fileContent or filename is missing');
         }
 
-        // Decode Base64 file content
         let fileData: Buffer;
         try {
             fileData = Buffer.from(uploadReq.file_content, 'base64');
@@ -36,10 +33,8 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
             return clientError(400, 'Invalid Base64-encoded file content');
         }
 
-        // Determine content type from headers or default to application/octet-stream
         const contentType = event.headers['x-file-content-type'] || 'application/octet-stream';
 
-        // Upload the file to S3
         const uniqueKey = `${crypto.randomUUID()}_${uploadReq.file_name}`;
         try {
             await s3Client.send(
@@ -55,7 +50,6 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
             return serverError('Failed to upload file to S3');
         }
 
-        // Generate file URL
         const fileURL = `https://${bucketName}.s3.amazonaws.com/${uniqueKey}`;
 
         return {
