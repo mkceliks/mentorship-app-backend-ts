@@ -16,9 +16,13 @@ export default [
         plugins: {
             '@typescript-eslint': tsPlugin,
         },
+        env: {
+            node: true,
+            es2021: true,
+        },
         rules: {
             'no-unused-vars': 'warn',
-            'no-console': 'warn',
+            'no-console': 'off',
             '@typescript-eslint/no-unused-vars': 'warn',
         },
     },
