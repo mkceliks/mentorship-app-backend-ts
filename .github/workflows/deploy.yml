@@ -1,0 +1,65 @@
+name: CDK Deployments
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_environment:
+        description: 'Choose environment (staging or production)'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: us-east-1
+      TARGET_ENV: ${{ github.event.inputs.target_environment }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js and CDK
+        run: |
+          curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          sudo apt-get install -y nodejs
+          npm install -g aws-cdk @aws-amplify/cli
+
+      - name: Build and Package Lambda Functions
+        run: |
+          mkdir -p output
+          for main_file in $(find src/lambdas -type f -name "main.ts"); do
+            function_name=$(basename "$(dirname "$main_file")")
+            echo "Building Lambda function: $function_name"
+            npx esbuild "$main_file" --bundle --platform=node --outdir=output --external:aws-sdk
+            zip -j "output/${function_name}_function.zip" "output/${function_name}.js"
+          done
+        shell: bash
+
+      - name: Verify Lambda Packages
+        run: |
+          for main_file in $(find src/lambdas -type f -name "main.ts"); do
+            function_name=$(basename "$(dirname "$main_file")")
+            if [ ! -f output/${function_name}_function.zip ]; then
+              echo "Error: ${function_name}_function.zip is missing."
+              exit 1
+            fi
+          done
+
+      - name: Synthesize the CDK Stack
+        run: npx cdk synth --context environment=${{ env.TARGET_ENV }}
+
+      - name: Deploy CDK Stack
+        run: npx cdk deploy "mentorship-${{ env.TARGET_ENV }}" --require-approval never
+
+      - name: Amplify Pull and Deploy
+        run: |
+          amplify pull --appId YOUR_AMPLIFY_APP_ID --envName ${{ env.TARGET_ENV }} --yes
+          amplify push --yes
