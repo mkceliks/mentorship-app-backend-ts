@@ -9,7 +9,7 @@
     "watch": "tsc -w",
     "test": "jest --config jest.config.ts",
     "cdk": "cdk",
-    "lint": "eslint 'src/**/*.ts' --max-warnings=0",
+    "lint": "eslint 'src/**/*.ts' --max-warnings=0"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
