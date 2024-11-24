@@ -2,9 +2,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { AppConfig } from '../../../../config/config';
 import { setAccessControl, setHeadersGet } from '../../../wrapper/response-wrapper';
+import { validateAuthorizationHeader, decodeAndValidateIDToken } from '../../../validator/validator';
 import { File } from '../../../../entity/file';
 
-// Initialize Config and S3 Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });
 
@@ -13,20 +13,41 @@ export async function ListHandler(event: APIGatewayProxyEvent): Promise<APIGatew
         const bucketName = config.bucketName;
         console.log(`S3 bucket name: ${bucketName}`);
 
-        // Fetch the list of objects from the S3 bucket
+        const authorizationHeader = event.headers['Authorization'];
+        if (!authorizationHeader) {
+            return {
+                statusCode: 401,
+                body: JSON.stringify({ message: 'Missing Authorization header' }),
+                headers: setAccessControl(),
+            };
+        }
+
+        const idToken = validateAuthorizationHeader(authorizationHeader);
+        const userPayload = decodeAndValidateIDToken(idToken);
+
+        if (!userPayload.sub) {
+            return {
+                statusCode: 400,
+                body: JSON.stringify({ message: 'Invalid token: User ID (sub) is missing' }),
+                headers: setAccessControl(),
+            };
+        }
+
+        const userFolder = userPayload.sub;
+        console.log(`Fetching files for user: ${userFolder}`);
+
         const response = await s3Client.send(
             new ListObjectsV2Command({
                 Bucket: bucketName,
+                Prefix: `${userFolder}/`,
             })
         );
 
-        // Map the S3 response to the File entity
         const files: File[] = (response.Contents || []).map((item) => ({
             key: item.Key || '',
             size: item.Size || 0,
         }));
 
-        // Convert the file list to JSON
         const filesJSON = JSON.stringify(files);
 
         return {
@@ -38,7 +59,7 @@ export async function ListHandler(event: APIGatewayProxyEvent): Promise<APIGatew
         console.error(`Failed to list files in bucket ${config.bucketName}:`, err);
         return {
             statusCode: 500,
-            body: 'Error listing files',
+            body: JSON.stringify({ message: 'Error listing files' }),
             headers: setAccessControl(),
         };
     }
