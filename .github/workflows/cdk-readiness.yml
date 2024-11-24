@@ -1,10 +1,10 @@
 name: CDK Deployment Readiness
 
 on:
-  pull_request:
+  push:
     branches:
       - master
-  push:
+  pull_request:
     branches:
       - master
 
@@ -13,7 +13,7 @@ env:
 
 jobs:
   validate-deployment:
-    name: Validate Deployment Readiness
+    name: Validate Deployment
     runs-on: ubuntu-latest
     env:
       TARGET_ENV: ${{ github.event.inputs.target_environment || 'staging' }}
@@ -26,7 +26,7 @@ jobs:
 
       - name: Install Node.js and Dependencies
         run: |
-          curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+          curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
           npm install -g aws-cdk
           npm install
@@ -34,7 +34,7 @@ jobs:
       - name: Synthesize CDK Stack (Dry Run)
         run: npx cdk synth --context environment=${{ env.TARGET_ENV }}
 
-      - name: Check CDK Stack Differences
+      - name: Check for CDK Stack Differences
         run: |
           stack_name="mentorship-staging"
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
@@ -42,74 +42,3 @@ jobs:
           fi
           echo "Running CDK diff on stack: $stack_name"
           npx cdk diff $stack_name
-
-  build-lambdas:
-    name: Build and Package Lambda Functions
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Build and Package Lambda Functions
-        run: |
-          mkdir -p output
-          for main_file in $(find src/lambdas -type f -name "main.ts"); do
-            dir=$(dirname "$main_file")
-            function_name=$(basename "$dir")
-            echo "Building Lambda function for $function_name"
-            npx esbuild "$main_file" \
-              --bundle \
-              --platform=node \
-              --outdir=output \
-              --outfile=output/${function_name}.js \
-              --external:@aws-sdk/client-cognito-identity-provider \
-              --external:js-yaml
-            if [ -f "output/${function_name}.js" ]; then
-              zip -j "output/${function_name}_function.zip" "output/${function_name}.js"
-            else
-              echo "Error: ${function_name}.js not found in output/"
-              exit 1
-            fi
-          done
-        shell: bash
-
-
-      - name: Verify Lambda Packages
-        run: |
-          missing_files=0
-          for main_file in $(find src/lambdas -type f -name "main.ts"); do
-            function_name=$(basename "$(dirname "$main_file")")
-            if [ ! -f output/${function_name}_function.zip ]; then
-              echo "Error: ${function_name}_function.zip is missing."
-              missing_files=$((missing_files+1))
-            fi
-          done
-          if [ $missing_files -ne 0 ]; then
-            echo "One or more Lambda packages are missing."
-            exit 1
-          fi
-
-  deploy-production:
-    name: Deploy to Production
-    if: github.ref == 'refs/heads/main'
-    needs: [validate-deployment, build-lambdas]
-    runs-on: ubuntu-latest
-    env:
-      TARGET_ENV: production
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Install Node.js and CDK
-        run: |
-          curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-          sudo apt-get install -y nodejs
-          npm install -g aws-cdk
-          npm install
-
-      - name: Deploy CDK Stack to Production
-        run: npx cdk deploy "mentorship-production" --require-approval never
