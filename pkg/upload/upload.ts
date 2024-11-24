@@ -14,6 +14,8 @@ export class UploadService {
             file_content: base64Image,
         };
 
+        console.log('Upload request payload:', uploadRequest);
+
         try {
             const response = await this.client.getClient().post<UploadResponse>('/upload', uploadRequest, {
                 headers: {
@@ -27,7 +29,9 @@ export class UploadService {
                 throw new Error(`Upload API returned status ${response.status}: ${response.statusText}`);
             }
         } catch (error) {
-            throw new Error(`Failed to call upload API: ${this.client.getClient().getUri()} ${uploadRequest} ${error}`);
+            console.error('UploadService Error:', error);
+            throw new Error(`Failed to call upload API: ${JSON.stringify(uploadRequest)} - ${error}`);
         }
     }
+
 }

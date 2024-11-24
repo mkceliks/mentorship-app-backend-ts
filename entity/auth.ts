@@ -3,6 +3,6 @@ export interface AuthRequest {
     email: string;
     password: string;
     role: string;
-    profilePicture: string;
-    fileName: string;
+    profile_picture: string;
+    file_name: string;
 }

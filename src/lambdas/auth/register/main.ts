@@ -64,8 +64,8 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
         let uploadResponse;
         try {
             uploadResponse = await uploadService.uploadProfilePicture(
-                requestBody.fileName,
-                requestBody.profilePicture,
+                requestBody.file_name,
+                requestBody.profile_picture,
                 event.headers['x-file-content-type'] || ''
             );
         } catch (err: any) {
