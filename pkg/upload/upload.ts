@@ -27,7 +27,7 @@ export class UploadService {
                 throw new Error(`Upload API returned status ${response.status}: ${response.statusText}`);
             }
         } catch (error) {
-            throw new Error(`Failed to call upload API: ${error}`);
+            throw new Error(`Failed to call upload API: ${this.client.getClient().getUri()} ${uploadRequest} ${error}`);
         }
     }
 }
