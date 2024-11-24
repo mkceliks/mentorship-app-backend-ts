@@ -23,7 +23,6 @@ async function main() {
 
     new MentorshipAppBackendTsStack(app, `${config.appName}-${environment}`, { env: awsContext }, config);
 
-    // Synthesize the app
     app.synth();
 }
 

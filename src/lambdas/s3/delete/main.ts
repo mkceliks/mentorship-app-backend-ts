@@ -5,7 +5,6 @@ import { validateKey } from '../../../validator/validator';
 import { setHeadersDelete } from '../../../wrapper/response-wrapper';
 import { ErrNoSuchKey } from '../../../errors/error';
 
-// Initialize Config and S3 Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });
 
@@ -14,7 +13,6 @@ export async function DeleteHandler(event: APIGatewayProxyEvent): Promise<APIGat
         const bucketName = config.bucketName;
         const key = event.queryStringParameters?.key;
 
-        // Validate Key
         if (!key || validateKey(key)) {
             return {
                 statusCode: 400,
@@ -23,7 +21,6 @@ export async function DeleteHandler(event: APIGatewayProxyEvent): Promise<APIGat
             };
         }
 
-        // Delete Object from S3
         try {
             await s3Client.send(
                 new DeleteObjectCommand({
