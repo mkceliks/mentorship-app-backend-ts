@@ -49,7 +49,7 @@ export function InitializeLambda(
         runtime: lambda.Runtime.NODEJS_18_X,
         handler: 'bootstrap',
         functionName: fullFunctionName,
-        code: lambda.Code.fromAsset(`../../output/${functionName}_function.zip`),
+        code: lambda.Code.fromAsset(`./output/${functionName}_function.zip`),
         environment: envVars,
         timeout: cdk.Duration.seconds(15),
     });
