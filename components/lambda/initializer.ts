@@ -16,6 +16,13 @@ import {
     GrantSecretManagerReadWritePermissions
 } from '../../permissions/access';
 import { Config } from '../../config/config';
+import {
+    ConfirmLambdaName,
+    LoginLambdaName,
+    RegisterLambdaName,
+    ResendLambdaName,
+    UploadLambdaName
+} from "../../api/router";
 
 export function InitializeLambda(
     scope: Construct,
@@ -42,7 +49,7 @@ export function InitializeLambda(
         runtime: lambda.Runtime.PROVIDED_AL2,
         handler: 'bootstrap',
         functionName: fullFunctionName,
-        code: lambda.Code.fromAsset(`./output/${functionName}_function.zip`),
+        code: lambda.Code.fromAsset(`../../src/lambdas/output/${functionName}_function.zip`),
         environment: envVars,
         timeout: cdk.Duration.seconds(15),
     });
@@ -81,19 +88,19 @@ export function grantPermissions(
     config: Config
 ) {
     switch (functionName) {
-        case 'RegisterLambdaName':
+        case RegisterLambdaName:
             GrantCognitoRegisterPermissions(lambdaFunction);
-            if (dependentLambdas['UploadLambdaName']) {
-                GrantLambdaInvokePermission(lambdaFunction, dependentLambdas['UploadLambdaName']);
+            if (dependentLambdas[UploadLambdaName]) {
+                GrantLambdaInvokePermission(lambdaFunction, dependentLambdas[UploadLambdaName]);
             }
             break;
-        case 'LoginLambdaName':
+        case LoginLambdaName:
             GrantCognitoLoginPermissions(lambdaFunction, config.cognitoPoolArn);
             break;
-        case 'ConfirmLambdaName':
+        case ConfirmLambdaName:
             GrantCognitoConfirmationPermissions(lambdaFunction, config.cognitoPoolArn);
             break;
-        case 'ResendLambdaName':
+        case ResendLambdaName:
             GrantCognitoResendPermissions(lambdaFunction, config.cognitoPoolArn);
             break;
         default:
