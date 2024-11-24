@@ -30,8 +30,11 @@ jobs:
         run: |
           curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
           sudo apt-get install -y nodejs
-          npm install -g aws-cdk
+          npm install -g aws-cdk @aws-amplify/cli
           npm install
+
+      - name: Verify Amplify CLI Installation
+        run: amplify --version
 
       - name: Build and Package Lambda Functions
         run: |
