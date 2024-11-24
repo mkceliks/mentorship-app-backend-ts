@@ -47,7 +47,7 @@ export function InitializeLambda(
 
     const lambdaFunction = new lambda.Function(scope, fullFunctionName, {
         runtime: lambda.Runtime.NODEJS_18_X,
-        handler: '${functionName}.handler',
+        handler: `${functionName}.handler`,
         functionName: fullFunctionName,
         code: lambda.Code.fromAsset(`./output/${functionName}_function.zip`),
         environment: envVars,

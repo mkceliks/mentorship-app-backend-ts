@@ -19,6 +19,7 @@ const uploadService = new UploadService(apiClient); // Initialize UploadService
 
 export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
+        console.log('Lambda invoked');
         const requestBody: AuthRequest = JSON.parse(event.body || '{}');
 
         // Validate fields
