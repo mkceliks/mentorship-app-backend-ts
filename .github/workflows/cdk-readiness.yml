@@ -51,14 +51,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build Lambda Functions
+      - name: Build and Package Lambda Functions
         run: |
           mkdir -p output
           for main_file in $(find src/lambdas -type f -name "main.ts"); do
             dir=$(dirname "$main_file")
             function_name=$(basename "$dir")
             echo "Building Lambda function for $function_name"
-            npx esbuild "$main_file" --bundle --platform=node --outdir=output --external:aws-sdk
+            npx esbuild "$main_file" \
+              --bundle \
+              --platform=node \
+              --outdir=output \
+              --external:@aws-sdk/client-cognito-identity-provider \
+              --external:js-yaml
             zip -j "output/${function_name}_function.zip" "output/${function_name}.js"
           done
         shell: bash
