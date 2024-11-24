@@ -126,7 +126,7 @@ export function decodeAndValidateIDToken(idToken: string): IDTokenPayload {
         if (!payload.email) {
             throw new Error('Email not found in ID token');
         }
-        if (!payload.customRole) {
+        if (!payload["custom:role"]) {
             throw new Error('Custom role (custom:role) is missing in the token');
         }
 
