@@ -1,0 +1,29 @@
+staging:
+  environment: "staging"
+  account: "034362052544"
+  appName: "mentorship"
+  region: "us-east-1"
+  cognitoAuthorizer: "cognito-authorizer-staging"
+  cognitoPoolArn: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_jHuY6weHT"
+  cognitoClientId: "685s5u6r6ntuti730g5foo20qq"
+  userProfileDDBTableName: "user_profiles_staging"
+  userPoolName: "mentorship-pool-staging"
+  bucketName: "big-bucket-staging"
+  slackWebhookSecretArn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
+  endpointBaseUrl: "https://f5km4eeg40.execute-api.us-east-1.amazonaws.com/staging"
+  allowUnconfirmedLogin: true
+
+production:
+  environment: "production"
+  account: "034362052544"
+  appName: "mentorship"
+  region: "us-east-1"
+  cognitoAuthorizer: "cognito-authorizer-production"
+  cognitoPoolArn: "arn:aws:cognito-idp:us-east-1:034362052544:userpool/us-east-1_SF5ataedj"
+  cognitoClientId: "3nuu7k13hgfdgej57nas4lmuft"
+  userProfileDDBTableName: "user_profiles_production"
+  userPoolName: "mentorship-pool-production"
+  bucketName: "big-bucket-production"
+  slackWebhookSecretArn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
+  endpointBaseUrl: "https://mzw40cdz59.execute-api.us-east-1.amazonaws.com/production"
+  allowUnconfirmedLogin: true
