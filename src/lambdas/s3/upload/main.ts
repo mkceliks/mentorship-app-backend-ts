@@ -6,6 +6,7 @@ import { setHeadersPost } from '../../../wrapper/response-wrapper';
 import { UploadRequest } from '../../../../entity/file';
 import { Buffer } from 'buffer';
 import * as crypto from 'crypto';
+import { decodeAndValidateIDToken } from '../../../validator/validator';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });
@@ -15,6 +16,14 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
         console.log('Received payload in UploadHandler:', event.body);
 
         const bucketName = config.bucketName;
+
+        const authorizationHeader = event.headers['Authorization'];
+        if (!authorizationHeader) {
+            return clientError(401, 'Missing Authorization header');
+        }
+        const idToken = authorizationHeader.split(' ')[1];
+        const userPayload = decodeAndValidateIDToken(idToken);
+        const userId = userPayload.sub;
 
         if (!event.body) {
             return clientError(400, 'Request body is missing');
@@ -35,7 +44,7 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
 
         const contentType = event.headers['x-file-content-type'] || 'application/octet-stream';
 
-        const uniqueKey = `${crypto.randomUUID()}_${uploadReq.file_name}`;
+        const uniqueKey = `${userId}/${crypto.randomUUID()}_${uploadReq.file_name}`;
         try {
             await s3Client.send(
                 new PutObjectCommand({
@@ -54,7 +63,7 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
 
         return {
             statusCode: 200,
-            body: JSON.stringify({ FileURL: fileURL }),
+            body: JSON.stringify({ file_url: fileURL }),
             headers: setHeadersPost(),
         };
     } catch (err: any) {

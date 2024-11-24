@@ -9,5 +9,5 @@ export interface UploadRequest {
 }
 
 export interface UploadResponse {
-    FileURL: string;
+    file_url: string;
 }
