@@ -1,10 +1,10 @@
 name: CDK Deployment Readiness
 
 on:
-  push:
+  pull_request:
     branches:
       - master
-  pull_request:
+  push:
     branches:
       - master
 
@@ -13,7 +13,7 @@ env:
 
 jobs:
   validate-deployment:
-    name: Validate Deployment
+    name: Validate Deployment Readiness
     runs-on: ubuntu-latest
     env:
       TARGET_ENV: ${{ github.event.inputs.target_environment || 'staging' }}
@@ -34,7 +34,7 @@ jobs:
       - name: Synthesize CDK Stack (Dry Run)
         run: npx cdk synth --context environment=${{ env.TARGET_ENV }}
 
-      - name: Check for CDK Stack Differences
+      - name: Check CDK Stack Differences
         run: |
           stack_name="mentorship-staging"
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
@@ -44,13 +44,14 @@ jobs:
           npx cdk diff $stack_name
 
   build-lambdas:
-    name: Build Lambda Functions
+    name: Build and Package Lambda Functions
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build and Package Lambda Functions
+      - name: Build Lambda Functions
         run: |
           mkdir -p output
           for main_file in $(find src/lambdas -type f -name "main.ts"); do
