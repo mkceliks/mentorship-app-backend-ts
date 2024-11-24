@@ -45,8 +45,7 @@ jobs:
                 --platform=node \
                 --target=node18 \
                 --outfile=output/${function_name}.js \
-                --external:@aws-sdk/client-cognito-identity-provider \
-                --external:js-yaml
+                --external:@aws-sdk/client-cognito-identity-provider
             if [ -f "output/${function_name}.js" ]; then
               zip -j "output/${function_name}_function.zip" "output/${function_name}.js"
             else
@@ -55,7 +54,6 @@ jobs:
             fi
           done
         shell: bash
-
 
       - name: Verify Lambda Packages
         run: |

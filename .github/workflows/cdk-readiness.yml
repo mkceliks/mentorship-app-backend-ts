@@ -49,8 +49,6 @@ jobs:
             fi
           done
         shell: bash
-      
-
 
       - name: Verify Lambda Packages
         run: |
