@@ -43,10 +43,15 @@ export async function ListHandler(event: APIGatewayProxyEvent): Promise<APIGatew
             })
         );
 
-        const files: File[] = (response.Contents || []).map((item) => ({
-            key: item.Key || '',
-            size: item.Size || 0,
-        }));
+        const files: File[] = (response.Contents || []).map((item) => {
+            const key = item.Key || '';
+            const item_name = key.replace(`${userFolder}/`, ''); // Extract the item name by removing the folder prefix
+            return {
+                key,
+                item_name,
+                size: item.Size || 0,
+            };
+        });
 
         const filesJSON = JSON.stringify(files);
 
