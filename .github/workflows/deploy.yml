@@ -71,5 +71,5 @@ jobs:
 
       - name: Amplify Setup and Deployment
         run: |
-          amplify pull --appId YOUR_AMPLIFY_APP_ID --envName ${{ env.TARGET_ENV }} --yes
+          amplify pull --appId ${{ secrets.AMPLIFY_APP_ID }} --envName ${{ env.TARGET_ENV }} --yes
           amplify push --yes
