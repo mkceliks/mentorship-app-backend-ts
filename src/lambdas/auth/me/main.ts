@@ -31,7 +31,7 @@ export async function MeHandler(event: APIGatewayProxyEvent): Promise<APIGateway
             return clientError(400, 'Invalid email format');
         }
 
-        const profileType = payload.customRole;
+        const profileType = payload["custom:role"];
         if (!profileType) {
             return clientError(400, 'ProfileType (custom:role) is missing in the token');
         }
@@ -46,7 +46,7 @@ export async function MeHandler(event: APIGatewayProxyEvent): Promise<APIGateway
         const responseBody = {
             email: payload.email,
             profile_type: profileType,
-            is_verified: payload.emailVerified,
+            is_verified: payload.email_verified,
             details: userDetails,
         };
 

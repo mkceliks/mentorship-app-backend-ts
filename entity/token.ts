@@ -1,7 +1,7 @@
 export interface IDTokenPayload {
     email: string;
-    customRole: string;
+    "custom:role": string;
     name: string;
-    emailVerified: boolean;
+    email_verified: boolean;
     sub: string;
 }
