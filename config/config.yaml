@@ -10,7 +10,7 @@ staging:
   userPoolName: "mentorship-pool-staging"
   bucketName: "big-bucket-staging"
   slackWebhookSecretArn: "arn:aws:secretsmanager:us-east-1:034362052544:secret:webhook_url/slack/notifier-xFQdTJ"
-  endpointBaseUrl: "https://f5km4eeg40.execute-api.us-east-1.amazonaws.com/staging"
+  endpointBaseUrl: "https://3tr7zaks42.execute-api.us-east-1.amazonaws.com/staging"
   allowUnconfirmedLogin: true
 
 production:

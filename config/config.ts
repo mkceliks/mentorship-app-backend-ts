@@ -1,4 +1,5 @@
 import * as fs from 'fs';
+import * as path from 'path';
 import * as yaml from 'js-yaml';
 
 export interface Config {
@@ -20,7 +21,7 @@ export interface Config {
 export class AppConfig {
     private static instance: Config;
 
-    static loadConfig(environment: string, filePath = './config/config.yaml'): Config {
+    static loadConfig(environment: string, filePath = path.resolve(__dirname, 'config.yaml')): Config {
         if (!environment) {
             throw new Error(
                 'Environment variable is empty. Please specify the environment (e.g., "staging" or "production").'

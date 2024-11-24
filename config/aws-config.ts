@@ -13,10 +13,10 @@ export class AWSConfig {
     }
 
     static getCognitoClient(): AWS.CognitoIdentityServiceProvider {
-        return new AWS.CognitoIdentityServiceProvider(this.awsConfig);
+        return new AWS.CognitoIdentityServiceProvider();
     }
 
     static getDynamoDBClient(): AWS.DynamoDB {
-        return new AWS.DynamoDB(this.awsConfig);
+        return new AWS.DynamoDB();
     }
 }
