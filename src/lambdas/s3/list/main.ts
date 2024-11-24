@@ -49,7 +49,7 @@ export async function ListHandler(event: APIGatewayProxyEvent): Promise<APIGatew
             const fileName = fullFileName.replace(/^[^_]+_/, '');
             return {
                 key,
-                itemName: fileName,
+                item_name: fileName,
                 size: item.Size || 0,
             };
         });
