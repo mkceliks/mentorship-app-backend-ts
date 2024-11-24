@@ -14,7 +14,15 @@ import { InitializeProfileTable } from '../components/dynamo-db/initializer';
 import { InitializeLambda } from '../components/lambda/initializer';
 import { InitializeUserPool } from '../components/cognito/pool';
 import { InitializeCognitoAuthorizer } from '../components/cognito/authorizer';
-import { InitializeAPI } from '../api/router';
+import {
+  ConfirmLambdaName,
+  DeleteLambdaName,
+  DownloadLambdaName,
+  InitializeAPI,
+  ListLambdaName,
+  LoginLambdaName, MeLambdaName,
+  RegisterLambdaName, ResendLambdaName
+} from '../api/router';
 import { CreateCloudFrontDistribution } from '../components/cloudfront/initializer';
 
 export class MentorshipAppBackendTsStack extends cdk.Stack {
@@ -35,14 +43,14 @@ export class MentorshipAppBackendTsStack extends cdk.Stack {
     const uploadLambda = InitializeLambda(this, s3Bucket, profileTable, 'UploadLambda',{}, config);
     const lambdas = {
       upload: uploadLambda,
-      register: InitializeLambda(this, s3Bucket, profileTable, 'RegisterLambda',{ uploadLambda }, config, ),
-      login: InitializeLambda(this, s3Bucket, profileTable, 'LoginLambda',{}, config),
-      download: InitializeLambda(this, s3Bucket, profileTable, 'DownloadLambda',{}, config),
-      list: InitializeLambda(this, s3Bucket, profileTable, 'ListLambda',{}, config),
-      delete: InitializeLambda(this, s3Bucket, profileTable, 'DeleteLambda',{}, config),
-      me: InitializeLambda(this, s3Bucket, profileTable, 'MeLambda',{}, config),
-      confirm: InitializeLambda(this, s3Bucket, profileTable, 'ConfirmLambda',{}, config),
-      resend: InitializeLambda(this, s3Bucket, profileTable, 'ResendLambda',{}, config),
+      register: InitializeLambda(this, s3Bucket, profileTable, RegisterLambdaName,{ uploadLambda }, config, ),
+      login: InitializeLambda(this, s3Bucket, profileTable, LoginLambdaName,{}, config),
+      download: InitializeLambda(this, s3Bucket, profileTable, DownloadLambdaName,{}, config),
+      list: InitializeLambda(this, s3Bucket, profileTable, ListLambdaName,{}, config),
+      delete: InitializeLambda(this, s3Bucket, profileTable, DeleteLambdaName,{}, config),
+      me: InitializeLambda(this, s3Bucket, profileTable, MeLambdaName,{}, config),
+      confirm: InitializeLambda(this, s3Bucket, profileTable, ConfirmLambdaName,{}, config),
+      resend: InitializeLambda(this, s3Bucket, profileTable, ResendLambdaName,{}, config),
     };
 
     // Cognito User Pool and Authorizer
