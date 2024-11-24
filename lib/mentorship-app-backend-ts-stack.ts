@@ -21,7 +21,7 @@ import {
   InitializeAPI,
   ListLambdaName,
   LoginLambdaName, MeLambdaName,
-  RegisterLambdaName, ResendLambdaName
+  RegisterLambdaName, ResendLambdaName, UploadLambdaName
 } from '../api/router';
 import { CreateCloudFrontDistribution } from '../components/cloudfront/initializer';
 
@@ -40,7 +40,7 @@ export class MentorshipAppBackendTsStack extends cdk.Stack {
     const profileTable = InitializeProfileTable(this, config.userProfileDDBTableName, removalPolicy);
 
     // Lambda Functions
-    const uploadLambda = InitializeLambda(this, s3Bucket, profileTable, 'UploadLambda',{}, config);
+    const uploadLambda = InitializeLambda(this, s3Bucket, profileTable, UploadLambdaName,{}, config);
     const lambdas = {
       upload: uploadLambda,
       register: InitializeLambda(this, s3Bucket, profileTable, RegisterLambdaName,{ uploadLambda }, config, ),
