@@ -56,7 +56,6 @@ jobs:
           done
         shell: bash
 
-
       - name: Verify Lambda Packages
         run: |
           for main_file in $(find src/lambdas -type f -name "main.ts"); do

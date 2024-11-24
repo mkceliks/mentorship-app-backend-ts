@@ -31,6 +31,7 @@ jobs:
       - name: Build and Package Lambda Functions
         run: |
           mkdir -p output
+          cp ./config/config.yaml output/
           for main_file in $(find src/lambdas -type f -name "main.ts"); do
             dir=$(dirname "$main_file")
             function_name=$(basename "$dir")
@@ -42,7 +43,7 @@ jobs:
                 --outfile=output/${function_name}.js \
                 --external:@aws-sdk/client-cognito-identity-provider
             if [ -f "output/${function_name}.js" ]; then
-              zip -j "output/${function_name}_function.zip" "output/${function_name}.js"
+              zip -j "output/${function_name}_function.zip" "output/${function_name}.js" "output/config.yaml"
             else
               echo "Error: ${function_name}.js not found in output/"
               exit 1
