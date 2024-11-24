@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
-import { AppConfig } from '../../../config/config';
-import { validateAuthorizationHeader, decodeAndValidateIDToken, validateEmail } from '../../validator/validator';
-import { clientError, serverError } from '../../errors/error';
-import { setHeadersGet } from '../../wrapper/response-wrapper';
+import { AppConfig } from '../../../../config/config';
+import { validateAuthorizationHeader, decodeAndValidateIDToken, validateEmail } from '../../../validator/validator';
+import { clientError, serverError } from '../../../errors/error';
+import { setHeadersGet } from '../../../wrapper/response-wrapper';
 
 // Initialize Config and DynamoDB Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');

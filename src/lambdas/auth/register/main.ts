@@ -1,13 +1,13 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { CognitoIdentityProvider, AdminDeleteUserCommand, AdminUpdateUserAttributesCommand, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
-import { AppConfig } from '../../../config/config';
-import { AuthRequest } from '../../../entity/auth';
-import { validateFields } from '../../validator/validator';
-import { clientError, serverError } from '../../errors/error';
-import { setHeadersPost } from '../../wrapper/response-wrapper';
-import { Client } from '../../../pkg/client';
-import { UploadService } from '../../../pkg/upload/upload';
+import { AppConfig } from '../../../../config/config';
+import { AuthRequest } from '../../../../entity/auth';
+import { validateFields } from '../../../validator/validator';
+import { clientError, serverError } from '../../../errors/error';
+import { setHeadersPost } from '../../../wrapper/response-wrapper';
+import { Client } from '../../../../pkg/client';
+import { UploadService } from '../../../../pkg/upload/upload';
 
 // Initialize Config and Clients
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');

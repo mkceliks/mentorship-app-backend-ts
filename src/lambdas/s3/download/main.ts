@@ -2,9 +2,9 @@ import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import { Buffer } from 'buffer';
-import { AppConfig } from '../../../config/config';
-import { clientError, serverError } from '../../errors/error';
-import { setHeadersGet } from '../../wrapper/response-wrapper';
+import { AppConfig } from '../../../../config/config';
+import { clientError, serverError } from '../../../errors/error';
+import { setHeadersGet } from '../../../wrapper/response-wrapper';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });

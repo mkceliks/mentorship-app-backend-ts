@@ -1,8 +1,8 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
-import { AppConfig } from '../../../config/config';
-import { setAccessControl, setHeadersGet } from '../../wrapper/response-wrapper';
-import { File } from '../../../entity/file';
+import { AppConfig } from '../../../../config/config';
+import { setAccessControl, setHeadersGet } from '../../../wrapper/response-wrapper';
+import { File } from '../../../../entity/file';
 
 // Initialize Config and S3 Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');

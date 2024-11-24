@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
-import { AppConfig } from '../../../config/config';
-import { clientError, serverError } from '../../errors/error';
-import { setHeadersPost } from '../../wrapper/response-wrapper';
-import { UploadRequest } from '../../../entity/file';
+import { AppConfig } from '../../../../config/config';
+import { clientError, serverError } from '../../../errors/error';
+import { setHeadersPost } from '../../../wrapper/response-wrapper';
+import { UploadRequest } from '../../../../entity/file';
 import { Buffer } from 'buffer';
 import * as crypto from 'crypto';
 

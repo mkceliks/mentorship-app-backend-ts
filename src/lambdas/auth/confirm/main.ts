@@ -1,10 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { CognitoIdentityProvider } from '@aws-sdk/client-cognito-identity-provider';
-import { AppConfig } from '../../../config/config';
-import { ConfirmRequest } from '../../../entity/confirm';
-import { validateEmail } from '../../validator/validator';
-import { clientError, serverError } from '../../errors/error';
-import { setHeadersPost } from '../../wrapper/response-wrapper';
+import { AppConfig } from '../../../../config/config';
+import { ConfirmRequest } from '../../../../entity/confirm';
+import { validateEmail } from '../../../validator/validator';
+import { clientError, serverError } from '../../../errors/error';
+import { setHeadersPost } from '../../../wrapper/response-wrapper';
 
 // Initialize Config and Cognito Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');

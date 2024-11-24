@@ -1,9 +1,9 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { AppConfig } from '../../../config/config';
-import { validateKey } from '../../validator/validator';
-import { setHeadersDelete } from '../../wrapper/response-wrapper';
-import { ErrNoSuchKey } from '../../errors/error';
+import { AppConfig } from '../../../../config/config';
+import { validateKey } from '../../../validator/validator';
+import { setHeadersDelete } from '../../../wrapper/response-wrapper';
+import { ErrNoSuchKey } from '../../../errors/error';
 
 // Initialize Config and S3 Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
