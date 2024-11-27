@@ -2,6 +2,12 @@ import { IDTokenPayload } from '../../entity/token';
 import { clientError } from '../errors/error';
 import { Buffer } from 'buffer';
 
+const Roles = {
+    Mentor: "Mentor",
+    Mentee: "Mentee",
+} as const;
+
+
 /**
  * Validates an S3 object key.
  * @param key - The object key to validate.
@@ -65,7 +71,7 @@ export function validatePassword(password: string): void {
  * @returns Error if the role is invalid, undefined otherwise.
  */
 export function validateRole(role: string): void {
-    if (role !== 'mentor' && role !== 'mentee') {
+    if (role !== Roles.Mentor && role !== Roles.Mentee) {
         throw new Error("Invalid role; must be either 'mentor' or 'mentee'");
     }
 }
@@ -84,9 +90,9 @@ export function validateFields(name: string, email: string, password: string, ro
         validateEmail(email);
         validatePassword(password);
         validateRole(role);
-        return null; // No validation errors
+        return null;
     } catch (error) {
-        return (error as Error).message; // Return the validation error message
+        return (error as Error).message;
     }
 }
 
