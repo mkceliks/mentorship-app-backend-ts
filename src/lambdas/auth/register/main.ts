@@ -8,6 +8,7 @@ import { clientError, serverError } from '../../../errors/error';
 import { setHeadersPost } from '../../../wrapper/response-wrapper';
 import { Client } from '../../../../pkg/client';
 import { UploadService } from '../../../../pkg/upload/upload';
+import { v4 as uuidv4 } from 'uuid';
 
 // Initialize Config and Clients
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
@@ -22,13 +23,11 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
         console.log('Lambda invoked');
         const requestBody: AuthRequest = JSON.parse(event.body || '{}');
 
-        // Validate fields
         const validationError = validateFields(requestBody.name, requestBody.email, requestBody.password, requestBody.role);
         if (validationError) {
             return clientError(400, validationError);
         }
 
-        // Sign up user in Cognito
         try {
             await cognitoClient.send(
                 new SignUpCommand({
@@ -38,6 +37,7 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
                     UserAttributes: [
                         { Name: 'email', Value: requestBody.email },
                         { Name: 'name', Value: requestBody.name },
+                        { Name: 'custom:role', Value: requestBody.role}
                     ],
                 })
             );
@@ -46,21 +46,6 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
             return serverError(`Failed to register user: ${err.message}`);
         }
 
-        // Update custom role in Cognito
-        try {
-            await cognitoClient.send(
-                new AdminUpdateUserAttributesCommand({
-                    UserPoolId: extractUserPoolID(config.cognitoPoolArn),
-                    Username: requestBody.email,
-                    UserAttributes: [{ Name: 'custom:role', Value: requestBody.role }],
-                })
-            );
-        } catch (err: any) {
-            console.error('Failed to update user role in Cognito:', err);
-            return serverError(`Failed to update user role: ${err.message}`);
-        }
-
-        // Upload profile picture using `UploadService`
         let uploadResponse;
         try {
             uploadResponse = await uploadService.uploadProfilePicture(
@@ -74,9 +59,8 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
             return serverError(`Failed to upload profile picture: ${err.message}`);
         }
 
-        // Save user profile in DynamoDB
         try {
-            await saveUserProfile(requestBody.email, requestBody.name, requestBody.role, uploadResponse.FileURL);
+            await saveUserProfile(requestBody.email, requestBody.name, requestBody.role, uploadResponse.file_url);
         } catch (err: any) {
             console.error('Failed to save user profile:', err);
             await deleteUserFromCognito(requestBody.email);
@@ -95,19 +79,24 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
 }
 
 async function saveUserProfile(email: string, name: string, role: string, profilePicURL: string): Promise<void> {
+    const now = new Date().toISOString();
+
     const profile = {
-        UserId: { S: email },
+        UserId: { S: uuidv4() },
         Name: { S: name },
         ProfileType: { S: role },
         Email: { S: email },
         ProfilePicURL: { S: profilePicURL },
+        CreatedAt: { S: now },
+        UpdatedAt: { S: now },
+        DeletedAt: { NULL: true },
     };
 
     await dynamoDBClient.send(
         new PutItemCommand({
             TableName: tableName,
             Item: profile,
-            ConditionExpression: 'attribute_not_exists(UserId)',
+            ConditionExpression: 'attribute_not_exists(UserId)', // Ensures no overwriting of existing UserId
         })
     );
 }
