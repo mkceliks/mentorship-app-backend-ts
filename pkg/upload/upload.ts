@@ -8,7 +8,7 @@ export class UploadService {
         this.client = client;
     }
 
-    async uploadProfilePicture(fileName: string, base64Image: string, contentType: string, authToken: string): Promise<UploadResponse> {
+    async uploadProfilePicture(fileName: string, base64Image: string, contentType: string): Promise<UploadResponse> {
         const uploadRequest: UploadRequest = {
             file_name: fileName,
             file_content: base64Image,
@@ -20,7 +20,6 @@ export class UploadService {
             const response = await this.client.getClient().post<UploadResponse>('/upload', uploadRequest, {
                 headers: {
                     'x-file-content-type': contentType,
-                    Authorization: `Bearer ${authToken}`, // Include the token
                 },
             });
 
