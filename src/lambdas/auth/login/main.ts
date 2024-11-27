@@ -18,13 +18,11 @@ export async function LoginHandler(event: APIGatewayProxyEvent): Promise<APIGate
             return clientError(400, 'Email and password are required');
         }
 
-        // Validate Email
         const emailValidationError = validateEmail(requestBody.email);
         if (emailValidationError) {
             return clientError(400, 'Email validation failed');
         }
 
-        // Initiate Authentication with Cognito
         try {
             const authResponse = await cognitoClient.send(
                 new InitiateAuthCommand({
@@ -41,10 +39,8 @@ export async function LoginHandler(event: APIGatewayProxyEvent): Promise<APIGate
                 return serverError('Authentication failed: empty authentication result from Cognito');
             }
 
-            // Extract User Pool ID
             const userPoolId = extractUserPoolID(config.cognitoPoolArn);
 
-            // Retrieve User Details
             const userDetails = await cognitoClient.send(
                 new AdminGetUserCommand({
                     UserPoolId: userPoolId,
@@ -52,12 +48,10 @@ export async function LoginHandler(event: APIGatewayProxyEvent): Promise<APIGate
                 })
             );
 
-            // Check if Email is Confirmed
             const isConfirmed = userDetails.UserAttributes?.some(
                 (attr) => attr.Name === 'email_verified' && attr.Value === 'true'
             ) || false;
 
-            // Build Token Response
             const tokens: Record<string, any> = {
                 email: requestBody.email,
                 isConfirmed,
@@ -88,7 +82,6 @@ export async function LoginHandler(event: APIGatewayProxyEvent): Promise<APIGate
     }
 }
 
-// Extract User Pool ID from Cognito ARN
 function extractUserPoolID(cognitoPoolArn: string): string {
     const parts = cognitoPoolArn.split('/');
     return parts[parts.length - 1];

@@ -1,5 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { CognitoIdentityProvider, AdminDeleteUserCommand, AdminUpdateUserAttributesCommand, SignUpCommand } from '@aws-sdk/client-cognito-identity-provider';
+import {
+    CognitoIdentityProvider,
+    AdminDeleteUserCommand,
+    SignUpCommand,
+    InitiateAuthCommand
+} from '@aws-sdk/client-cognito-identity-provider';
 import { DynamoDBClient, PutItemCommand } from '@aws-sdk/client-dynamodb';
 import { AppConfig } from '../../../../config/config';
 import { AuthRequest } from '../../../../entity/auth';
@@ -10,13 +15,12 @@ import { Client } from '../../../../pkg/client';
 import { UploadService } from '../../../../pkg/upload/upload';
 import { v4 as uuidv4 } from 'uuid';
 
-// Initialize Config and Clients
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const cognitoClient = new CognitoIdentityProvider({ region: config.region });
 const dynamoDBClient = new DynamoDBClient({ region: config.region });
 const tableName = process.env.DDB_TABLE_NAME || '';
-const apiClient = new Client(config); // Initialize the API Client
-const uploadService = new UploadService(apiClient); // Initialize UploadService
+const apiClient = new Client(config);
+const uploadService = new UploadService(apiClient);
 
 export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
@@ -37,7 +41,7 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
                     UserAttributes: [
                         { Name: 'email', Value: requestBody.email },
                         { Name: 'name', Value: requestBody.name },
-                        { Name: 'custom:role', Value: requestBody.role}
+                        { Name: 'custom:role', Value: requestBody.role },
                     ],
                 })
             );
@@ -46,12 +50,22 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
             return serverError(`Failed to register user: ${err.message}`);
         }
 
+        let idToken: string;
+        try {
+            idToken = await authenticateUser(requestBody.email, requestBody.password);
+        } catch (err: any) {
+            console.error('Failed to authenticate user:', err);
+            await deleteUserFromCognito(requestBody.email); // Rollback registration
+            return serverError(`Failed to authenticate user: ${err.message}`);
+        }
+
         let uploadResponse;
         try {
             uploadResponse = await uploadService.uploadProfilePicture(
                 requestBody.file_name,
                 requestBody.profile_picture,
-                event.headers['x-file-content-type'] || ''
+                event.headers['x-file-content-type'] || '',
+                idToken
             );
         } catch (err: any) {
             console.error('Failed to upload profile picture:', err);
@@ -96,7 +110,7 @@ async function saveUserProfile(email: string, name: string, role: string, profil
         new PutItemCommand({
             TableName: tableName,
             Item: profile,
-            ConditionExpression: 'attribute_not_exists(UserId)', // Ensures no overwriting of existing UserId
+            ConditionExpression: 'attribute_not_exists(UserId)',
         })
     );
 }
@@ -121,4 +135,28 @@ function extractUserPoolID(cognitoPoolArn: string): string {
 
 export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     return RegisterHandler(event);
+}
+
+async function authenticateUser(email: string, password: string): Promise<string> {
+    try {
+        const authResponse = await cognitoClient.send(
+            new InitiateAuthCommand({
+                AuthFlow: 'USER_PASSWORD_AUTH',
+                ClientId: config.cognitoClientId,
+                AuthParameters: {
+                    USERNAME: email,
+                    PASSWORD: password,
+                },
+            })
+        );
+
+        if (!authResponse.AuthenticationResult || !authResponse.AuthenticationResult.IdToken) {
+            throw new Error('Failed to retrieve ID token');
+        }
+
+        return authResponse.AuthenticationResult.IdToken;
+    } catch (err: any) {
+        console.error('Failed to authenticate user:', err);
+        throw new Error(`Failed to authenticate user: ${err.message}`);
+    }
 }
