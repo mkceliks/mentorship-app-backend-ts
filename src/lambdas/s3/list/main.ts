@@ -33,7 +33,7 @@ export async function ListHandler(event: APIGatewayProxyEvent): Promise<APIGatew
             };
         }
 
-        const userFolder = userPayload.sub;
+        const userFolder = userPayload.email;
         console.log(`Fetching files for user: ${userFolder}`);
 
         const response = await s3Client.send(
