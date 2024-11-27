@@ -25,7 +25,6 @@ export async function MeHandler(event: APIGatewayProxyEvent): Promise<APIGateway
         }
 
 
-        // Decode and Validate ID Token
         const payload = decodeAndValidateIDToken(idToken);
         if (!payload.email || validateEmail(payload.email)) {
             return clientError(400, 'Invalid email format');
@@ -36,13 +35,11 @@ export async function MeHandler(event: APIGatewayProxyEvent): Promise<APIGateway
             return clientError(400, 'ProfileType (custom:role) is missing in the token');
         }
 
-        // Fetch User Profile
         const userDetails = await fetchUserProfile(payload.email, profileType);
         if (!userDetails) {
             return clientError(404, 'User profile not found');
         }
 
-        // Construct Response
         const responseBody = {
             email: payload.email,
             profile_type: profileType,
