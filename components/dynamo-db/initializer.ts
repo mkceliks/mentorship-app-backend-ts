@@ -7,7 +7,7 @@ export function InitializeProfileTable(
     tableName: string,
     removalPolicy: cdk.RemovalPolicy
 ): dynamodb.Table {
-    return new dynamodb.Table(scope, tableName, {
+    const table = new dynamodb.Table(scope, tableName, {
         tableName: tableName,
         partitionKey: {
             name: 'UserId',
@@ -20,4 +20,15 @@ export function InitializeProfileTable(
         billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
         removalPolicy: removalPolicy,
     });
+
+    table.addGlobalSecondaryIndex({
+        indexName: 'EmailIndex',
+        partitionKey: {
+            name: 'Email',
+            type: dynamodb.AttributeType.STRING,
+        },
+        projectionType: dynamodb.ProjectionType.ALL,
+    });
+
+    return table;
 }

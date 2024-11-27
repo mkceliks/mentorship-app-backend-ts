@@ -1,43 +1,44 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient, GetItemCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
 import { AppConfig } from '../../../../config/config';
 import { validateAuthorizationHeader, decodeAndValidateIDToken, validateEmail } from '../../../validator/validator';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersGet } from '../../../wrapper/response-wrapper';
 
-// Initialize Config and DynamoDB Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const dynamoDBClient = new DynamoDBClient({ region: config.region });
 const tableName = process.env.DDB_TABLE_NAME || '';
+const emailIndexName = 'EmailIndex'; // GSI name
 
 export async function MeHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
-// Ensure the Authorization header is provided
         const authorizationHeader = event.headers['Authorization'];
         if (!authorizationHeader) {
             return clientError(401, 'Missing Authorization header');
         }
 
-// Validate the Authorization header
         const idToken = validateAuthorizationHeader(authorizationHeader);
         if (!idToken) {
             return clientError(401, 'Invalid Authorization header');
         }
-
 
         const payload = decodeAndValidateIDToken(idToken);
         if (!payload.email || validateEmail(payload.email)) {
             return clientError(400, 'Invalid email format');
         }
 
-        const profileType = payload["custom:role"];
+        const profileType = payload['custom:role'];
         if (!profileType) {
             return clientError(400, 'ProfileType (custom:role) is missing in the token');
         }
 
-        const userDetails = await fetchUserProfile(payload.email, profileType);
+        const userDetails = await fetchUserProfileByEmail(payload.email);
         if (!userDetails) {
             return clientError(404, 'User profile not found');
+        }
+
+        if (userDetails.DeletedAt && userDetails.DeletedAt !== 'NULL') {
+            return clientError(410, 'User profile is marked as deleted');
         }
 
         const responseBody = {
@@ -58,31 +59,32 @@ export async function MeHandler(event: APIGatewayProxyEvent): Promise<APIGateway
     }
 }
 
-async function fetchUserProfile(email: string, profileType: string): Promise<Record<string, string>> {
-    if (!email || !profileType) {
-        throw new Error('Email or profileType is empty');
+async function fetchUserProfileByEmail(email: string): Promise<Record<string, string> | null> {
+    if (!email) {
+        throw new Error('Email is empty');
     }
 
-    console.log(`Fetching user profile for UserId: ${email} and ProfileType: ${profileType} from table: ${tableName}`);
+    console.log(`Querying user profile by Email: ${email} from index: ${emailIndexName}`);
 
     try {
         const result = await dynamoDBClient.send(
-            new GetItemCommand({
+            new QueryCommand({
                 TableName: tableName,
-                Key: {
-                    UserId: { S: email },
-                    ProfileType: { S: profileType },
+                IndexName: emailIndexName, // Use the GSI
+                KeyConditionExpression: 'Email = :email',
+                ExpressionAttributeValues: {
+                    ':email': { S: email },
                 },
             })
         );
 
-        if (!result.Item) {
-            console.log(`No item found for UserId: ${email} and ProfileType: ${profileType}`);
-            return {};
+        if (!result.Items || result.Items.length === 0) {
+            console.log(`No user found for Email: ${email}`);
+            return null;
         }
 
         const userDetails: Record<string, string> = {};
-        for (const [key, value] of Object.entries(result.Item)) {
+        for (const [key, value] of Object.entries(result.Items[0])) {
             if (value.S) {
                 userDetails[key] = value.S;
             }
@@ -91,7 +93,7 @@ async function fetchUserProfile(email: string, profileType: string): Promise<Rec
         console.log(`Fetched user details:`, userDetails);
         return userDetails;
     } catch (err: any) {
-        console.error('DynamoDB GetItem error:', err);
+        console.error('DynamoDB Query error:', err);
         throw err;
     }
 }
