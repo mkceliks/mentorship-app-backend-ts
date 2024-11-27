@@ -52,6 +52,7 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
         let uploadResponse;
         try {
             uploadResponse = await uploadService.uploadProfilePicture(
+                requestBody.email,
                 requestBody.file_name,
                 requestBody.profile_picture,
                 event.headers['x-file-content-type'] || '',
@@ -99,7 +100,7 @@ async function saveUserProfile(email: string, name: string, role: string, profil
         new PutItemCommand({
             TableName: tableName,
             Item: profile,
-            ConditionExpression: 'attribute_not_exists(UserId)', // Ensures no overwriting of existing UserId
+            ConditionExpression: 'attribute_not_exists(Email)',
         })
     );
 }

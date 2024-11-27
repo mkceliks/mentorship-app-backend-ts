@@ -6,6 +6,7 @@ export interface File {
 export interface UploadRequest {
     file_name: string;
     file_content: string;
+    email: string;
 }
 
 export interface UploadResponse {
