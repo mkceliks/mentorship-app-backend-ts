@@ -34,7 +34,7 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
 
         const contentType = event.headers['x-file-content-type'] || 'application/octet-stream';
 
-        const uniqueKey = `${uploadReq.email}_${uploadReq.file_name}`;
+        const uniqueKey = `${uploadReq.email}/${uploadReq.file_name}`;
         try {
             await s3Client.send(
                 new PutObjectCommand({
