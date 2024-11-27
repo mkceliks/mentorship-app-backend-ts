@@ -8,10 +8,11 @@ export class UploadService {
         this.client = client;
     }
 
-    async uploadProfilePicture(fileName: string, base64Image: string, contentType: string): Promise<UploadResponse> {
+    async uploadProfilePicture(email: string, fileName: string, base64Image: string, contentType: string): Promise<UploadResponse> {
         const uploadRequest: UploadRequest = {
             file_name: fileName,
             file_content: base64Image,
+            email:email,
         };
 
         console.log('Upload request payload:', uploadRequest);
