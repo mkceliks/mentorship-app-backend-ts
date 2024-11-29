@@ -33,7 +33,6 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
         const allowedFields = {
             Name: '#Name',
             ProfilePicURL: 'ProfilePicURL',
-            ProfileType: 'ProfileType',
         };
 
         const updateExpressionParts: string[] = [];
@@ -47,10 +46,6 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
         if (requestBody.ProfilePicURL) {
             updateExpressionParts.push('ProfilePicURL = :profilePicURL');
             expressionAttributeValues[':profilePicURL'] = { S: requestBody.ProfilePicURL };
-        }
-        if (requestBody.ProfileType) {
-            updateExpressionParts.push('ProfileType = :profileType');
-            expressionAttributeValues[':profileType'] = { S: requestBody.ProfileType };
         }
 
         if (updateExpressionParts.length === 0) {
