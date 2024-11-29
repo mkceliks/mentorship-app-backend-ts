@@ -22,33 +22,27 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
         }
 
         const payload = decodeAndValidateIDToken(idToken);
-        const email = payload.email;
-        if (!email) {
-            return clientError(400, 'Invalid ID token: missing email');
+        const email = payload.email
+        const profileType = payload['custom:role'];
+
+        if (!email || !profileType) {
+            return clientError(400, 'Invalid ID token: missing UserId or ProfileType');
         }
 
         const requestBody = JSON.parse(event.body || '{}');
-        const { name, profilePicURL, role } = requestBody;
+        const allowedFields = ['Name', 'ProfilePicURL', 'ProfileType'];
+        const updateExpressionParts: string[] = [];
+        const expressionAttributeValues: Record<string, any> = { ':updatedAt': { S: new Date().toISOString() } };
 
-        if (!name && !profilePicURL && !role) {
-            return clientError(400, 'At least one field (name, profilePicURL, role) must be provided for profile-update.');
+        for (const key of allowedFields) {
+            if (requestBody[key]) {
+                updateExpressionParts.push(`${key} = :${key}`);
+                expressionAttributeValues[`:${key}`] = { S: requestBody[key] };
+            }
         }
 
-        const now = new Date().toISOString();
-        const updateExpressionParts = [];
-        const expressionAttributeValues: Record<string, any> = { ':updatedAt': { S: now } };
-
-        if (name) {
-            updateExpressionParts.push('Name = :name');
-            expressionAttributeValues[':name'] = { S: name };
-        }
-        if (profilePicURL) {
-            updateExpressionParts.push('ProfilePicURL = :profilePicURL');
-            expressionAttributeValues[':profilePicURL'] = { S: profilePicURL };
-        }
-        if (role) {
-            updateExpressionParts.push('ProfileType = :role');
-            expressionAttributeValues[':role'] = { S: role };
+        if (updateExpressionParts.length === 0) {
+            return clientError(400, 'At least one updatable field must be provided');
         }
 
         const updateExpression = `SET ${updateExpressionParts.join(', ')}, UpdatedAt = :updatedAt`;
@@ -59,6 +53,7 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
                     TableName: tableName,
                     Key: {
                         Email: { S: email },
+                        ProfileType: { S: profileType },
                     },
                     UpdateExpression: updateExpression,
                     ExpressionAttributeValues: expressionAttributeValues,
@@ -67,6 +62,9 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
             );
         } catch (err: any) {
             console.error('Failed to update user profile:', err);
+            if (err.name === 'ConditionalCheckFailedException') {
+                return clientError(404, 'User profile not found');
+            }
             return serverError(`Failed to update user profile: ${err.message}`);
         }
 

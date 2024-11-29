@@ -6,7 +6,6 @@ import { validateEmail } from '../../../validator/validator';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersPost } from '../../../wrapper/response-wrapper';
 
-// Initialize Config and Cognito Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const cognitoClient = new CognitoIdentityProvider({ region: config.region });
 
