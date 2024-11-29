@@ -13,7 +13,8 @@ import {
   InitializeAPI,
   ListLambdaName,
   LoginLambdaName, MeLambdaName,
-  RegisterLambdaName, ResendLambdaName, UploadLambdaName
+  RegisterLambdaName, ResendLambdaName, UploadLambdaName,
+    ProfileUpdateLambdaName
 } from '../api/router';
 import { CreateCloudFrontDistribution } from '../components/cloudfront/initializer';
 
@@ -29,17 +30,17 @@ export class MentorshipAppBackendTsStack extends cdk.Stack {
     const removalPolicy = config.environment === 'staging' ? cdk.RemovalPolicy.DESTROY : cdk.RemovalPolicy.RETAIN;
     const profileTable = InitializeProfileTable(this, config.userProfileDDBTableName, removalPolicy);
 
-    const uploadLambda = InitializeLambda(this, s3Bucket, profileTable, UploadLambdaName,{}, config);
     const lambdas = {
-      upload: uploadLambda,
-      register: InitializeLambda(this, s3Bucket, profileTable, RegisterLambdaName,{ uploadLambda }, config, ),
-      login: InitializeLambda(this, s3Bucket, profileTable, LoginLambdaName,{}, config),
-      download: InitializeLambda(this, s3Bucket, profileTable, DownloadLambdaName,{}, config),
-      list: InitializeLambda(this, s3Bucket, profileTable, ListLambdaName,{}, config),
-      delete: InitializeLambda(this, s3Bucket, profileTable, DeleteLambdaName,{}, config),
-      me: InitializeLambda(this, s3Bucket, profileTable, MeLambdaName,{}, config),
-      confirm: InitializeLambda(this, s3Bucket, profileTable, ConfirmLambdaName,{}, config),
-      resend: InitializeLambda(this, s3Bucket, profileTable, ResendLambdaName,{}, config),
+      'upload': InitializeLambda(this, s3Bucket, profileTable, UploadLambdaName,{}, config),
+      'register': InitializeLambda(this, null, profileTable, RegisterLambdaName,{}, config),
+      'login': InitializeLambda(this, null, profileTable, LoginLambdaName,{}, config),
+      'download': InitializeLambda(this, s3Bucket, profileTable, DownloadLambdaName,{}, config),
+      'list': InitializeLambda(this, s3Bucket, profileTable, ListLambdaName,{}, config),
+      'delete': InitializeLambda(this, s3Bucket, profileTable, DeleteLambdaName,{}, config),
+      'me': InitializeLambda(this, null, profileTable, MeLambdaName,{}, config),
+      'confirm': InitializeLambda(this, null, profileTable, ConfirmLambdaName,{}, config),
+      'resend': InitializeLambda(this, null , profileTable, ResendLambdaName,{}, config),
+      'profile-update': InitializeLambda(this, s3Bucket, profileTable, ProfileUpdateLambdaName, {}, config)
     };
 
     const userPool = InitializeUserPool(this, config.userPoolName, config.cognitoPoolArn);
