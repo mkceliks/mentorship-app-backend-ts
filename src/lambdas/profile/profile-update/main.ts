@@ -22,10 +22,10 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
         }
 
         const payload = decodeAndValidateIDToken(idToken);
-        const email = payload.email
+        const userId = payload.sub;
         const profileType = payload['custom:role'];
 
-        if (!email || !profileType) {
+        if (!userId || !profileType) {
             return clientError(400, 'Invalid ID token: missing UserId or ProfileType');
         }
 
@@ -64,13 +64,13 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
                 new UpdateItemCommand({
                     TableName: tableName,
                     Key: {
-                        Email: { S: email },
+                        UserId: { S: userId },
                         ProfileType: { S: profileType },
                     },
                     UpdateExpression: updateExpression,
                     ExpressionAttributeNames: expressionAttributeNames,
                     ExpressionAttributeValues: expressionAttributeValues,
-                    ConditionExpression: 'attribute_exists(Email)',
+                    ConditionExpression: 'attribute_exists(UserId)',
                 })
             );
         } catch (err: any) {
