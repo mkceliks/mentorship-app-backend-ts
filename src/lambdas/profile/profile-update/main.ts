@@ -30,15 +30,27 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
         }
 
         const requestBody = JSON.parse(event.body || '{}');
-        const allowedFields = ['Name', 'ProfilePicURL', 'ProfileType'];
+        const allowedFields = {
+            Name: '#Name',
+            ProfilePicURL: 'ProfilePicURL',
+            ProfileType: 'ProfileType',
+        };
+
         const updateExpressionParts: string[] = [];
         const expressionAttributeValues: Record<string, any> = { ':updatedAt': { S: new Date().toISOString() } };
+        const expressionAttributeNames: Record<string, string> = { '#Name': 'Name' };
 
-        for (const key of allowedFields) {
-            if (requestBody[key]) {
-                updateExpressionParts.push(`${key} = :${key}`);
-                expressionAttributeValues[`:${key}`] = { S: requestBody[key] };
-            }
+        if (requestBody.Name) {
+            updateExpressionParts.push('#Name = :name');
+            expressionAttributeValues[':name'] = { S: requestBody.Name };
+        }
+        if (requestBody.ProfilePicURL) {
+            updateExpressionParts.push('ProfilePicURL = :profilePicURL');
+            expressionAttributeValues[':profilePicURL'] = { S: requestBody.ProfilePicURL };
+        }
+        if (requestBody.ProfileType) {
+            updateExpressionParts.push('ProfileType = :profileType');
+            expressionAttributeValues[':profileType'] = { S: requestBody.ProfileType };
         }
 
         if (updateExpressionParts.length === 0) {
@@ -56,6 +68,7 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
                         ProfileType: { S: profileType },
                     },
                     UpdateExpression: updateExpression,
+                    ExpressionAttributeNames: expressionAttributeNames,
                     ExpressionAttributeValues: expressionAttributeValues,
                     ConditionExpression: 'attribute_exists(Email)',
                 })
