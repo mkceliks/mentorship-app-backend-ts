@@ -11,6 +11,7 @@ export const RegisterLambdaName = 'register';
 export const MeLambdaName = 'me';
 export const ConfirmLambdaName = 'confirm';
 export const ResendLambdaName = 'resend';
+export const ProfileUpdateLambdaName = 'profile-update';
 
 export function InitializeAPI(
     scope: Construct,
@@ -53,6 +54,7 @@ function SetupProtectedEndpoints(
     addApiResource(api, 'GET', ListLambdaName, lambdas[ListLambdaName], cognitoAuthorizer);
     addApiResource(api, 'DELETE', DeleteLambdaName, lambdas[DeleteLambdaName], cognitoAuthorizer);
     addApiResource(api, 'GET', MeLambdaName, lambdas[MeLambdaName], cognitoAuthorizer);
+    addApiResource(api,'PUT',ProfileUpdateLambdaName, lambdas[ProfileUpdateLambdaName], cognitoAuthorizer);
 }
 
 function addApiResource(

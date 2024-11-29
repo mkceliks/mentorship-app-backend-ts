@@ -13,7 +13,7 @@ import {
     GrantCognitoTokenValidationPermissions,
     GrantDynamoDBPermissions,
     GrantLambdaInvokePermission,
-    GrantSecretManagerReadWritePermissions
+    GrantSecretManagerReadWritePermissions,
 } from '../../permissions/access';
 import { Config } from '../../config/config';
 import {
@@ -21,37 +21,47 @@ import {
     LoginLambdaName,
     RegisterLambdaName,
     ResendLambdaName,
-    UploadLambdaName
-} from "../../api/router";
+    UploadLambdaName,
+} from '../../api/router';
 
 export function InitializeLambda(
     scope: Construct,
-    bucket: s3.Bucket,
+    bucket: s3.Bucket | null,
     table: dynamodb.Table,
     functionName: string,
     dependentLambdas: Record<string, lambda.Function>,
-    config: Config
+    config: Config,
+    options?: {
+        timeout?: cdk.Duration;
+        runtime?: lambda.Runtime;
+        additionalEnvVars?: Record<string, string>;
+    }
 ): lambda.Function {
     const fullFunctionName = `${functionName}-${config.environment}`;
 
-    const envVars = getLambdaEnvironmentVars(
-        config.cognitoClientId,
-        config.cognitoPoolArn,
-        config.environment,
-        bucket.bucketName,
-        table.tableName,
-        config
-    );
+    const envVars = {
+        ...getLambdaEnvironmentVars(
+            config.cognitoClientId,
+            config.cognitoPoolArn,
+            config.environment,
+            bucket?.bucketName || '',
+            table.tableName,
+            config
+        ),
+        ...(options?.additionalEnvVars || {}),
+    };
 
-    console.log(`Creating Lambda function: ${fullFunctionName} with environment variables:`, envVars);
+    console.log(`Creating Lambda function: ${fullFunctionName}`, {
+        environmentVariables: envVars,
+    });
 
     const lambdaFunction = new lambda.Function(scope, fullFunctionName, {
-        runtime: lambda.Runtime.NODEJS_18_X,
+        runtime: options?.runtime || lambda.Runtime.NODEJS_18_X,
         handler: `${functionName}.handler`,
         functionName: fullFunctionName,
         code: lambda.Code.fromAsset(`./output/${functionName}_function.zip`),
         environment: envVars,
-        timeout: cdk.Duration.seconds(15),
+        timeout: options?.timeout || cdk.Duration.seconds(15),
     });
 
     grantPermissions(lambdaFunction, dependentLambdas, functionName, bucket, table, config);
@@ -66,27 +76,36 @@ function getLambdaEnvironmentVars(
     bucketName: string,
     tableName: string,
     config: Config
-): { [key: string]: string } {
-    return {
-        BUCKET_NAME: bucketName,
+): Record<string, string> {
+    const envVars: Record<string, string> = {
         ENVIRONMENT: environment,
+        DDB_TABLE_NAME: tableName,
         COGNITO_CLIENT_ID: cognitoClientID,
         COGNITO_POOL_ARN: arn,
-        ACCOUNT: config.account,
         REGION: config.region,
-        SLACK_WEBHOOK_SECRET_ARN: config.slackWebhookSecretArn,
-        DDB_TABLE_NAME: tableName,
     };
+
+    if (bucketName) {
+        envVars['BUCKET_NAME'] = bucketName;
+    }
+
+    if (config.slackWebhookSecretArn) {
+        envVars['SLACK_WEBHOOK_SECRET_ARN'] = config.slackWebhookSecretArn;
+    }
+
+    return envVars;
 }
 
 export function grantPermissions(
     lambdaFunction: lambda.Function,
     dependentLambdas: Record<string, lambda.Function>,
     functionName: string,
-    bucket: s3.Bucket,
+    bucket: s3.Bucket | null,
     table: dynamodb.Table,
     config: Config
 ) {
+    console.log(`Granting permissions for Lambda: ${functionName}`);
+
     switch (functionName) {
         case RegisterLambdaName:
             GrantCognitoRegisterPermissions(lambdaFunction);
@@ -104,11 +123,16 @@ export function grantPermissions(
             GrantCognitoResendPermissions(lambdaFunction, config.cognitoPoolArn);
             break;
         default:
-            GrantAccessForBucket(lambdaFunction, bucket, functionName);
+            if (bucket) {
+                GrantAccessForBucket(lambdaFunction, bucket, functionName);
+            }
             GrantCognitoDescribePermissions(lambdaFunction, config.cognitoPoolArn);
             GrantCognitoTokenValidationPermissions(lambdaFunction, config.cognitoPoolArn);
     }
 
     GrantDynamoDBPermissions(lambdaFunction, table);
-    GrantSecretManagerReadWritePermissions(lambdaFunction, config.slackWebhookSecretArn);
+
+    if (config.slackWebhookSecretArn) {
+        GrantSecretManagerReadWritePermissions(lambdaFunction, config.slackWebhookSecretArn);
+    }
 }
