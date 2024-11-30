@@ -112,4 +112,4 @@ async function fetchUserProfileByEmail(email: string): Promise<Record<string, st
 /**
  * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
  */
-export const handler = handlerWrapper(MeHandler, '#auth-cognito', 'MeHandler');
+export const handler = handlerWrapper(MeHandler, 'auth-cognito', 'MeHandler');

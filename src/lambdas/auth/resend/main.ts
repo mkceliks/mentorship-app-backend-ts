@@ -58,4 +58,4 @@ export async function ResendHandler(event: APIGatewayProxyEvent): Promise<APIGat
 /**
  * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
  */
-export const handler = handlerWrapper(ResendHandler, '#auth-cognito', 'ResendHandler');
+export const handler = handlerWrapper(ResendHandler, 'auth-cognito', 'ResendHandler');
