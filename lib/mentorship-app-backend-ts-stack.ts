@@ -14,7 +14,7 @@ import {
   ListLambdaName,
   LoginLambdaName, MeLambdaName,
   RegisterLambdaName, ResendLambdaName, UploadLambdaName,
-    ProfileUpdateLambdaName
+  ProfileUpdateLambdaName, AddPackageLambdaName
 } from '../api/router';
 import { CreateCloudFrontDistribution } from '../components/cloudfront/initializer';
 
@@ -41,7 +41,8 @@ export class MentorshipAppBackendTsStack extends cdk.Stack {
       'me': InitializeLambda(this, null, profileTable, MeLambdaName,{}, config),
       'confirm': InitializeLambda(this, null, profileTable, ConfirmLambdaName,{}, config),
       'resend': InitializeLambda(this, null , profileTable, ResendLambdaName,{}, config),
-      'profile-update': InitializeLambda(this, s3Bucket, profileTable, ProfileUpdateLambdaName, {}, config)
+      'profile-update': InitializeLambda(this, s3Bucket, profileTable, ProfileUpdateLambdaName, {}, config),
+      'add-package': InitializeLambda(this, null, packageTable, AddPackageLambdaName, {}, config)
     };
 
     const userPool = InitializeUserPool(this, config.userPoolName, config.cognitoPoolArn);
