@@ -11,6 +11,7 @@ export interface Config {
     cognitoPoolArn: string;
     cognitoClientId: string;
     userProfileDDBTableName: string;
+    mentorPackagesDDBTableName: string;
     userPoolName: string;
     bucketName: string;
     slackWebhookSecretArn: string;
