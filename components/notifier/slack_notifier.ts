@@ -37,7 +37,7 @@ export async function NotifySlack(
 
     const formattedFields = fields.map((field) => ({
         title: `*${field.title}*`,
-        value: `\`${field.value}\``,
+        value: typeof field.value === 'string' ? field.value : JSON.stringify(field.value, null, 2),
         short: field.short ?? false,
     }));
 
