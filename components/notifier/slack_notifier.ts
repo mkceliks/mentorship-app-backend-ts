@@ -35,15 +35,19 @@ export async function NotifySlack(
 
     const slackClient = new WebClient(token);
 
+    const formattedFields = fields.map((field) => ({
+        title: `*${field.title}*`,
+        value: `\`${field.value}\``,
+        short: field.short ?? false,
+    }));
+
     const attachments = [
         {
             color: colorMap[level],
-            text: message,
-            fields: fields.map((field) => ({
-                title: field.title,
-                value: field.value,
-                short: field.short ?? false,
-            })),
+            pretext: `*${message}*`,
+            fields: formattedFields,
+            footer: `Notification Level: ${level.toUpperCase()}`,
+            ts: Math.floor(Date.now() / 1000).toString(),
         },
     ];
 
