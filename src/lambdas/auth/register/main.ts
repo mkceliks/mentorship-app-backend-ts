@@ -148,4 +148,4 @@ function extractUserPoolID(cognitoPoolArn: string): string {
 /**
  * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
  */
-export const handler = handlerWrapper(RegisterHandler, 'auth-cognito', 'RegisterHandler');
+export const handler = handlerWrapper(RegisterHandler, 'C07UWDMBWQP', 'RegisterHandler');
