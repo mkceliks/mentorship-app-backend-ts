@@ -5,11 +5,16 @@ import { ConfirmRequest } from '../../../../entity/confirm';
 import { validateEmail } from '../../../validator/validator';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersPost } from '../../../wrapper/response-wrapper';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
-// Initialize Config and Cognito Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const cognitoClient = new CognitoIdentityProvider({ region: config.region });
 
+/**
+ * ConfirmHandler processes the confirmation of a user sign-up.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function ConfirmHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const requestBody: ConfirmRequest = JSON.parse(event.body || '{}');
@@ -18,14 +23,11 @@ export async function ConfirmHandler(event: APIGatewayProxyEvent): Promise<APIGa
             return clientError(400, 'Email and confirmation code are required');
         }
 
-        // Email Validation
         const emailValidationError = validateEmail(requestBody.email);
         if (emailValidationError) {
             return clientError(400, emailValidationError);
         }
 
-
-        // Confirm Sign Up with Cognito
         try {
             await cognitoClient.confirmSignUp({
                 ClientId: config.cognitoClientId,
@@ -42,7 +44,6 @@ export async function ConfirmHandler(event: APIGatewayProxyEvent): Promise<APIGa
             return serverError(`Failed to confirm sign-up with Cognito: ${err.message}`);
         }
 
-        // Success Response
         return {
             statusCode: 200,
             headers: setHeadersPost(),
@@ -54,7 +55,7 @@ export async function ConfirmHandler(event: APIGatewayProxyEvent): Promise<APIGa
     }
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    console.log(`Loading configuration for environment: ${process.env.ENVIRONMENT}`);
-    return ConfirmHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications.
+ */
+export const handler = handlerWrapper(ConfirmHandler, '#auth-cognito', 'ConfirmHandler');
