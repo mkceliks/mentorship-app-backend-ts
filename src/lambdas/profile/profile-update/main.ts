@@ -107,10 +107,14 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
             return serverError(`Failed to update user profile: ${err.message}`);
         }
 
+        const responseBody = {
+            email: payload.email,
+        };
+
         return {
             statusCode: 200,
             headers: setHeadersPost(),
-            body: JSON.stringify({ message: 'User profile updated successfully' }),
+            body: JSON.stringify(responseBody),
         };
     } catch (err: any) {
         console.error('Unexpected error in UpdateProfileHandler:', err);
