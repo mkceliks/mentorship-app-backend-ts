@@ -27,6 +27,8 @@ export const handlerWrapper = (
                 throw new Error('Internal server error: Unable to retrieve Slack token.');
             }
 
+            console.log("slackToken:", slackToken);
+
             const level = response.statusCode >= 200 && response.statusCode < 300 ? 'info' : 'error';
             const channel = getEnvironmentChannel(baseChannel, level);
             const message = `${handlerName} ${level === 'info' ? 'executed successfully' : 'execution failed'}`;
