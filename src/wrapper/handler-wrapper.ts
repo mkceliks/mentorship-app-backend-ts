@@ -50,6 +50,7 @@ export const handlerWrapper = (
             try {
                 const slackToken = await GetSecretValue(slackWebhookARN);
                 const channel = getEnvironmentChannel(baseChannel, 'error');
+                console.log('Resolved Slack channel:', channel);
                 const message = `${handlerName} execution failed`;
                 const fields = [
                     { title: 'Handler', value: handlerName, short: true },

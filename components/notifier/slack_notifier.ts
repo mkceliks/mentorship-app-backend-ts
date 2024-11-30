@@ -15,6 +15,15 @@ export async function NotifySlack(
 
     const web = new WebClient(token);
 
+    console.log('Sending message to Slack:', {
+        token: token,
+        baseChannel,
+        message,
+        fields,
+        level,
+    });
+
+
     try {
         await web.conversations.join({ channel: baseChannel });
 
