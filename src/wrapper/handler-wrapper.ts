@@ -19,17 +19,14 @@ export const handlerWrapper = (
 ) => {
     return async (event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> => {
         try {
-            // Execute the original handler.
             const response = await handler(event);
 
-            // Retrieve the Slack token.
             const slackToken = await GetSecretValue(slackWebhookARN);
             if (!slackToken) {
                 console.error('Failed to retrieve Slack webhook token.');
                 throw new Error('Internal server error: Unable to retrieve Slack token.');
             }
 
-            // Prepare notification details.
             const level = response.statusCode >= 200 && response.statusCode < 300 ? 'info' : 'error';
             const channel = getEnvironmentChannel(baseChannel, level);
             const message = `${handlerName} ${level === 'info' ? 'executed successfully' : 'execution failed'}`;
@@ -42,12 +39,10 @@ export const handlerWrapper = (
                     : []),
             ];
 
-            // Send notification to Slack.
             await NotifySlack(slackToken, channel, message, fields, level);
 
             return response;
         } catch (error) {
-            // Log the error and notify Slack in case of failure.
             console.error(`Error in ${handlerName}:`, error);
 
             try {
@@ -66,7 +61,6 @@ export const handlerWrapper = (
                 console.error('Failed to notify Slack:', notifyError);
             }
 
-            // Re-throw the error to ensure Lambda error handling.
             throw error;
         }
     };
