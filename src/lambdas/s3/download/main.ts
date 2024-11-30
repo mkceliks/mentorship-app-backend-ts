@@ -5,10 +5,16 @@ import { Buffer } from 'buffer';
 import { AppConfig } from '../../../../config/config';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersGet } from '../../../wrapper/response-wrapper';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });
 
+/**
+ * Handles downloading an object from an S3 bucket.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function DownloadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const bucketName = config.bucketName;
@@ -50,6 +56,11 @@ export async function DownloadHandler(event: APIGatewayProxyEvent): Promise<APIG
     }
 }
 
+/**
+ * Converts a readable stream into a Buffer.
+ * @param readable - The readable stream.
+ * @returns A promise that resolves to a Buffer.
+ */
 async function streamToBuffer(readable: Readable): Promise<Buffer> {
     const chunks: Uint8Array[] = [];
     for await (const chunk of readable) {
@@ -58,6 +69,7 @@ async function streamToBuffer(readable: Readable): Promise<Buffer> {
     return Buffer.concat(chunks);
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return DownloadHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
+ */
+export const handler = handlerWrapper(DownloadHandler, '#s3-bucket', 'DownloadHandler');
