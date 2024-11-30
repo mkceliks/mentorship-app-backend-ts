@@ -58,4 +58,4 @@ export async function ConfirmHandler(event: APIGatewayProxyEvent): Promise<APIGa
 /**
  * The main handler function wrapped with handlerWrapper for Slack notifications.
  */
-export const handler = handlerWrapper(ConfirmHandler, 'C07UWDMBWQP', 'ConfirmHandler');
+export const handler = handlerWrapper(ConfirmHandler, '#auth-cognito', 'ConfirmHandler');

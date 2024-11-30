@@ -3,7 +3,7 @@ import { NotifySlack } from '../../components/notifier/slack_notifier';
 import { GetSecretValue } from '../../components/secrets/get_secret';
 
 const slackWebhookARN = process.env.SLACK_WEBHOOK_SECRET_ARN || '';
-const environment = process.env.ENVIRONMENT || 'production';
+const environment = process.env.ENVIRONMENT || 'staging';
 
 export const handlerWrapper = (
     handler: (event: APIGatewayProxyEvent) => Promise<APIGatewayProxyResult>,
@@ -22,6 +22,7 @@ export const handlerWrapper = (
                 statusCode: 500,
                 body: JSON.stringify({ message: 'Internal Server Error' }),
             };
+            console.error(`[${handlerName}] Handler execution failed:`, err);
         }
 
         try {
@@ -33,21 +34,11 @@ export const handlerWrapper = (
             const level = response.statusCode >= 200 && response.statusCode < 300 ? 'info' : 'error';
             const channel = getEnvironmentChannel(baseChannel, level);
             const message = `${handlerName} ${level === 'info' ? 'executed successfully' : 'execution failed'}`;
-            const fields = [
-                { title: 'Handler', value: handlerName, short: true },
-                { title: 'Status', value: level === 'info' ? 'Success' : 'Failure', short: true },
-                { title: 'Environment', value: environment, short: true },
-                ...(level === 'info'
-                    ? [{ title: 'Response', value: JSON.stringify(response.body || {}), short: true }]
-                    : []),
-                ...(error
-                    ? [{ title: 'Error', value: error.message, short: false }]
-                    : []),
-            ];
+            const fields = prepareSlackFields(handlerName, response, level, error);
 
             await NotifySlack(slackToken, channel, message, fields, level);
         } catch (notifyError) {
-            console.error('Failed to send notification to Slack:', notifyError);
+            console.error(`[${handlerName}] Failed to send notification to Slack:`, notifyError);
         }
 
         if (error) {
@@ -59,9 +50,36 @@ export const handlerWrapper = (
 };
 
 const getEnvironmentChannel = (baseChannel: string, level: string): string => {
-    return environment === 'staging'
-        ? `${baseChannel}-staging`
-        : level === 'error'
-            ? `${baseChannel}-alerts`
-            : baseChannel;
+    if (!baseChannel) {
+        throw new Error('Base channel is not defined');
+    }
+
+    const environmentSuffix = environment ? `-${environment}` : '';
+    const alertSuffix = level === 'error' ? '-alerts' : '';
+
+    return `${baseChannel}${alertSuffix}${environmentSuffix}`;
+};
+
+
+const prepareSlackFields = (
+    handlerName: string,
+    response: APIGatewayProxyResult,
+    level: string,
+    error: Error | null
+): Array<{ title: string; value: string; short: boolean }> => {
+    const fields = [
+        { title: 'Handler', value: handlerName, short: true },
+        { title: 'Status', value: level === 'info' ? 'Success' : 'Failure', short: true },
+        { title: 'Environment', value: environment, short: true },
+    ];
+
+    if (level === 'info' && response.body) {
+        fields.push({ title: 'Response', value: JSON.stringify(response.body), short: false });
+    }
+
+    if (error) {
+        fields.push({ title: 'Error', value: error.message, short: false });
+    }
+
+    return fields;
 };
