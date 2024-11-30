@@ -12,6 +12,7 @@ import { clientError, serverError } from '../../../errors/error';
 import { setHeadersPost } from '../../../wrapper/response-wrapper';
 import { Client } from '../../../../pkg/client';
 import { UploadService } from '../../../../pkg/upload/upload';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 import { v4 as uuidv4 } from 'uuid';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
@@ -21,6 +22,11 @@ const tableName = process.env.DDB_TABLE_NAME || '';
 const apiClient = new Client(config);
 const uploadService = new UploadService(apiClient);
 
+/**
+ * Handles user registration, including Cognito sign-up, profile picture upload, and DynamoDB profile creation.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         console.log('Lambda invoked');
@@ -82,6 +88,13 @@ export async function RegisterHandler(event: APIGatewayProxyEvent): Promise<APIG
     }
 }
 
+/**
+ * Saves the user profile to DynamoDB.
+ * @param email - User email.
+ * @param name - User name.
+ * @param role - User role.
+ * @param profilePicURL - URL of the uploaded profile picture.
+ */
 async function saveUserProfile(email: string, name: string, role: string, profilePicURL: string): Promise<void> {
     const now = new Date().toISOString();
 
@@ -105,6 +118,10 @@ async function saveUserProfile(email: string, name: string, role: string, profil
     );
 }
 
+/**
+ * Deletes a user from Cognito in case of an error during registration.
+ * @param email - User email.
+ */
 async function deleteUserFromCognito(email: string): Promise<void> {
     try {
         await cognitoClient.send(
@@ -118,11 +135,17 @@ async function deleteUserFromCognito(email: string): Promise<void> {
     }
 }
 
+/**
+ * Extracts the Cognito User Pool ID from the Cognito Pool ARN.
+ * @param cognitoPoolArn - Cognito Pool ARN.
+ * @returns The User Pool ID.
+ */
 function extractUserPoolID(cognitoPoolArn: string): string {
     const parts = cognitoPoolArn.split('/');
     return parts[parts.length - 1];
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return RegisterHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
+ */
+export const handler = handlerWrapper(RegisterHandler, '#user-registration', 'RegisterHandler');
