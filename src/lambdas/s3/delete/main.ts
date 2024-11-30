@@ -4,10 +4,16 @@ import { AppConfig } from '../../../../config/config';
 import { validateKey } from '../../../validator/validator';
 import { setHeadersDelete } from '../../../wrapper/response-wrapper';
 import { ErrNoSuchKey } from '../../../errors/error';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });
 
+/**
+ * Handles deleting an object from an S3 bucket.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function DeleteHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const bucketName = config.bucketName;
@@ -58,6 +64,7 @@ export async function DeleteHandler(event: APIGatewayProxyEvent): Promise<APIGat
     }
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return DeleteHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
+ */
+export const handler = handlerWrapper(DeleteHandler, '#s3-bucket', 'DeleteHandler');
