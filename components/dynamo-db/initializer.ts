@@ -32,3 +32,24 @@ export function InitializeProfileTable(
 
     return table;
 }
+
+export function InitializePackageTable(
+    scope: Construct,
+    tableName: string,
+    removalPolicy: cdk.RemovalPolicy
+): dynamodb.Table {
+    return new dynamodb.Table(scope, tableName, {
+        tableName: tableName,
+        partitionKey: {
+            name: 'MentorId',
+            type: dynamodb.AttributeType.STRING,
+        },
+        sortKey: {
+            name: 'PackageId',
+            type: dynamodb.AttributeType.STRING,
+        },
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: removalPolicy,
+    });
+}
+

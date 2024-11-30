@@ -2,7 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import { Construct } from 'constructs';
 import { Config } from '../config/config';
 import { InitializeBucket } from '../components/s3-bucket/initializer';
-import { InitializeProfileTable } from '../components/dynamo-db/initializer';
+import {InitializePackageTable, InitializeProfileTable} from '../components/dynamo-db/initializer';
 import { InitializeLambda } from '../components/lambda/initializer';
 import { InitializeUserPool } from '../components/cognito/pool';
 import { InitializeCognitoAuthorizer } from '../components/cognito/authorizer';
@@ -29,6 +29,7 @@ export class MentorshipAppBackendTsStack extends cdk.Stack {
 
     const removalPolicy = config.environment === 'staging' ? cdk.RemovalPolicy.DESTROY : cdk.RemovalPolicy.RETAIN;
     const profileTable = InitializeProfileTable(this, config.userProfileDDBTableName, removalPolicy);
+    const packageTable = InitializePackageTable(this, config.mentorPackagesDDBTableName, removalPolicy);
 
     const lambdas = {
       'upload': InitializeLambda(this, s3Bucket, profileTable, UploadLambdaName,{}, config),
