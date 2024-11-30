@@ -74,7 +74,20 @@ const prepareSlackFields = (
     ];
 
     if (level === 'info' && response.body) {
-        fields.push({ title: 'Response', value: JSON.stringify(response.body), short: false });
+        try {
+            const parsedBody = JSON.parse(response.body);
+            fields.push({
+                title: 'Response',
+                value: `\`\`\`${JSON.stringify(parsedBody, null, 2)}\`\`\``,
+                short: false,
+            });
+        } catch {
+            fields.push({
+                title: 'Response',
+                value: response.body,
+                short: false,
+            });
+        }
     }
 
     if (error) {
