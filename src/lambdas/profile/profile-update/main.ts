@@ -4,12 +4,18 @@ import { AppConfig } from '../../../../config/config';
 import { validateAuthorizationHeader, decodeAndValidateIDToken } from '../../../validator/validator';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersPost } from '../../../wrapper/response-wrapper';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const dynamoDBClient = new DynamoDBClient({ region: config.region });
 const tableName = process.env.DDB_TABLE_NAME || '';
 const emailIndexName = 'EmailIndex';
 
+/**
+ * Handles updating the user profile in DynamoDB.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const authorizationHeader = event.headers['Authorization'];
@@ -30,11 +36,6 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
         }
 
         const requestBody = JSON.parse(event.body || '{}');
-        const allowedFields = {
-            Name: '#Name',
-            ProfilePicURL: 'ProfilePicURL',
-        };
-
         const updateExpressionParts: string[] = [];
         const expressionAttributeValues: Record<string, any> = { ':updatedAt': { S: new Date().toISOString() } };
         const expressionAttributeNames: Record<string, string> = { '#Name': 'Name' };
@@ -117,6 +118,7 @@ export async function UpdateProfileHandler(event: APIGatewayProxyEvent): Promise
     }
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return UpdateProfileHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
+ */
+export const handler = handlerWrapper(UpdateProfileHandler, '#profile', 'UpdateProfileHandler');

@@ -5,10 +5,16 @@ import { clientError, serverError } from '../../../errors/error';
 import { setHeadersPost } from '../../../wrapper/response-wrapper';
 import { UploadRequest } from '../../../../entity/file';
 import { Buffer } from 'buffer';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });
 
+/**
+ * Handles uploading files to an S3 bucket.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         console.log('Received payload in UploadHandler:', event.body);
@@ -62,6 +68,7 @@ export async function UploadHandler(event: APIGatewayProxyEvent): Promise<APIGat
     }
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return UploadHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
+ */
+export const handler = handlerWrapper(UploadHandler, '#s3-bucket', 'UploadHandler');

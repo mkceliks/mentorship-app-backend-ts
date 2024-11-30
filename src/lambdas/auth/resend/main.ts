@@ -5,16 +5,20 @@ import { ResendRequest } from '../../../../entity/resend';
 import { validateEmail } from '../../../validator/validator';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersPost } from '../../../wrapper/response-wrapper';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
-// Initialize Config and Cognito Client
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const cognitoClient = new CognitoIdentityProvider({ region: config.region });
 
+/**
+ * Handles resending confirmation codes to users via Cognito.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function ResendHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const requestBody: ResendRequest = JSON.parse(event.body || '{}');
 
-        // Validate Email
         if (!requestBody.email) {
             return clientError(400, 'Email is required');
         }
@@ -24,7 +28,6 @@ export async function ResendHandler(event: APIGatewayProxyEvent): Promise<APIGat
             return clientError(400, 'Email validation failed');
         }
 
-        // Resend Confirmation Code via Cognito
         try {
             await cognitoClient.send(
                 new ResendConfirmationCodeCommand({
@@ -37,7 +40,6 @@ export async function ResendHandler(event: APIGatewayProxyEvent): Promise<APIGat
             return serverError(`Failed to resend confirmation code: ${err.message}`);
         }
 
-        // Success Response
         const responseBody = {
             message: 'Confirmation code resent successfully',
         };
@@ -53,6 +55,7 @@ export async function ResendHandler(event: APIGatewayProxyEvent): Promise<APIGat
     }
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return ResendHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
+ */
+export const handler = handlerWrapper(ResendHandler, '#auth-cognito', 'ResendHandler');

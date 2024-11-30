@@ -4,12 +4,18 @@ import { AppConfig } from '../../../../config/config';
 import { validateAuthorizationHeader, decodeAndValidateIDToken, validateEmail } from '../../../validator/validator';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersGet } from '../../../wrapper/response-wrapper';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const dynamoDBClient = new DynamoDBClient({ region: config.region });
 const tableName = process.env.DDB_TABLE_NAME || '';
-const emailIndexName = 'EmailIndex'; // GSI name
+const emailIndexName = 'EmailIndex';
 
+/**
+ * Handles fetching the user profile based on the ID token.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function MeHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const authorizationHeader = event.headers['Authorization'];
@@ -59,6 +65,11 @@ export async function MeHandler(event: APIGatewayProxyEvent): Promise<APIGateway
     }
 }
 
+/**
+ * Fetches the user profile by email using DynamoDB.
+ * @param email - The email of the user.
+ * @returns The user profile details or null if not found.
+ */
 async function fetchUserProfileByEmail(email: string): Promise<Record<string, string> | null> {
     if (!email) {
         throw new Error('Email is empty');
@@ -70,7 +81,7 @@ async function fetchUserProfileByEmail(email: string): Promise<Record<string, st
         const result = await dynamoDBClient.send(
             new QueryCommand({
                 TableName: tableName,
-                IndexName: emailIndexName, // Use the GSI
+                IndexName: emailIndexName,
                 KeyConditionExpression: 'Email = :email',
                 ExpressionAttributeValues: {
                     ':email': { S: email },
@@ -98,6 +109,7 @@ async function fetchUserProfileByEmail(email: string): Promise<Record<string, st
     }
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return MeHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
+ */
+export const handler = handlerWrapper(MeHandler, '#user-profile', 'MeHandler');

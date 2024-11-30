@@ -4,10 +4,16 @@ import { AppConfig } from '../../../../config/config';
 import { setAccessControl, setHeadersGet } from '../../../wrapper/response-wrapper';
 import { validateAuthorizationHeader, decodeAndValidateIDToken } from '../../../validator/validator';
 import { File } from '../../../../entity/file';
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const s3Client = new S3Client({ region: config.region });
 
+/**
+ * Handles listing objects in an S3 bucket for a specific user.
+ * @param event - The API Gateway event.
+ * @returns APIGatewayProxyResult
+ */
 export async function ListHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const bucketName = config.bucketName;
@@ -71,6 +77,7 @@ export async function ListHandler(event: APIGatewayProxyEvent): Promise<APIGatew
     }
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return ListHandler(event);
-}
+/**
+ * The main handler function wrapped with handlerWrapper for Slack notifications and logging.
+ */
+export const handler = handlerWrapper(ListHandler, '#s3-bucket', 'ListHandler');
