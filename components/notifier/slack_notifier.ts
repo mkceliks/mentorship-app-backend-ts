@@ -13,38 +13,31 @@ export async function NotifySlack(
         error: '#FF0000',
     };
 
-    const web = new WebClient(token);
+    const slackClient = new WebClient(token);
 
-    console.log('Sending message to Slack:', {
-        token: token,
-        baseChannel,
-        message,
-        fields,
-        level,
-    });
+    const attachments = [
+        {
+            color: colorMap[level],
+            text: message,
+            fields: fields.map((field) => ({
+                title: field.title,
+                value: field.value,
+                short: field.short || false,
+            })),
+        },
+    ];
 
+    console.log('Sending message to Slack:', { baseChannel, message, fields, level });
 
     try {
-        await web.conversations.join({ channel: baseChannel });
+        await slackClient.conversations.join({ channel: baseChannel });
 
-        const attachments = [
-            {
-                color: colorMap[level] || '#36a64f',
-                text: message,
-                fields: fields.map((field) => ({
-                    title: field.title,
-                    value: field.value,
-                    short: field.short || false,
-                })),
-            },
-        ];
-
-        await web.chat.postMessage({
+        await slackClient.chat.postMessage({
             channel: baseChannel,
             attachments,
         });
 
-        console.log(`Message sent to Slack channel ${baseChannel}`);
+        console.log(`Message sent successfully to Slack channel ${baseChannel}`);
     } catch (err) {
         console.error(`Failed to send message to Slack channel ${baseChannel}:`, err);
     }
