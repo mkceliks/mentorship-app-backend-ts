@@ -14,8 +14,13 @@ const tableName = process.env.PACKAGES_TABLE_NAME || '';
 export async function CreatePackageHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const authorizationHeader = event.headers['Authorization'];
+        const userIdHeader = event.headers['x-user-id']; // Extract x-user-id header
+
         if (!authorizationHeader) {
             return clientError(401, 'Missing Authorization header');
+        }
+        if (!userIdHeader) {
+            return clientError(400, 'Missing x-user-id header');
         }
 
         const idToken = validateAuthorizationHeader(authorizationHeader);
@@ -26,6 +31,11 @@ export async function CreatePackageHandler(event: APIGatewayProxyEvent): Promise
         const payload = decodeAndValidateIDToken(idToken);
         const mentorId = payload.sub;
         const role = payload['custom:role'];
+
+        // Validate user_id header against token
+        if (userIdHeader !== mentorId) {
+            return clientError(403, 'User ID does not match the authenticated user');
+        }
 
         if (!mentorId || role !== 'Mentor') {
             return clientError(403, 'Only mentors can create packages');
@@ -41,25 +51,20 @@ export async function CreatePackageHandler(event: APIGatewayProxyEvent): Promise
         const now = new Date().toISOString();
         const packageId = uuidv4();
 
-        try {
-            await dynamoDBClient.send(
-                new PutItemCommand({
-                    TableName: tableName,
-                    Item: {
-                        MentorId: { S: mentorId },
-                        PackageId: { S: packageId },
-                        PackageName: { S: packageName },
-                        Description: { S: description || '' },
-                        Price: { N: price.toString() },
-                        CreatedAt: { S: now },
-                        UpdatedAt: { S: now },
-                    },
-                })
-            );
-        } catch (err: any) {
-            console.error('Failed to create package:', err);
-            return serverError('Failed to create package');
-        }
+        await dynamoDBClient.send(
+            new PutItemCommand({
+                TableName: tableName,
+                Item: {
+                    MentorId: { S: mentorId },
+                    PackageId: { S: packageId },
+                    PackageName: { S: packageName },
+                    Description: { S: description || '' },
+                    Price: { N: price.toString() },
+                    CreatedAt: { S: now },
+                    UpdatedAt: { S: now },
+                },
+            })
+        );
 
         return {
             statusCode: 201,

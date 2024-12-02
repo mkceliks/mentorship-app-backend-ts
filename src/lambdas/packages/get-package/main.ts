@@ -4,6 +4,8 @@ import { AppConfig } from '../../../../config/config';
 import { validateAuthorizationHeader, decodeAndValidateIDToken } from '../../../validator/validator';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersGet } from '../../../wrapper/response-wrapper';
+import {handlerWrapper} from "../../../wrapper/handler-wrapper";
+import {DeletePackageHandler} from "../delete-package/main";
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const dynamoDBClient = new DynamoDBClient({ region: config.region });
@@ -64,6 +66,4 @@ export async function GetPackagesHandler(event: APIGatewayProxyEvent): Promise<A
     }
 }
 
-export async function handler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
-    return GetPackagesHandler(event);
-}
+export const handler = handlerWrapper(GetPackagesHandler, '#packages', 'GetPackagesHandler');
