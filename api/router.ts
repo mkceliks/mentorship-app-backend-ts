@@ -28,7 +28,7 @@ export function InitializeAPI(
         defaultCorsPreflightOptions: {
             allowOrigins: apigateway.Cors.ALL_ORIGINS,
             allowMethods: apigateway.Cors.ALL_METHODS,
-            allowHeaders: ['Content-Type', 'Authorization', 'x-file-content-type'],
+            allowHeaders: ['Content-Type', 'Authorization', 'x-file-content-type','x-user-id'],
         },
         deployOptions: {
             stageName: environment,
