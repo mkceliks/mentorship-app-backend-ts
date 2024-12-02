@@ -13,6 +13,9 @@ export const ConfirmLambdaName = 'confirm';
 export const ResendLambdaName = 'resend';
 export const ProfileUpdateLambdaName = 'profile-update';
 export const AddPackageLambdaName = 'add-package';
+export const GetPackageLambdaName = 'get-package';
+export const DeletePackageLambdaName = 'delete-package';
+export const ListMentorPackagesLambdaName = 'list-packages';
 
 export function InitializeAPI(
     scope: Construct,
@@ -57,6 +60,11 @@ function SetupProtectedEndpoints(
     addApiResource(api, 'GET', MeLambdaName, lambdas[MeLambdaName], cognitoAuthorizer);
     addApiResource(api,'PUT',ProfileUpdateLambdaName, lambdas[ProfileUpdateLambdaName], cognitoAuthorizer);
     addApiResource(api, 'POST', AddPackageLambdaName, lambdas[AddPackageLambdaName], cognitoAuthorizer);
+    addApiResource(api, 'GET', ListMentorPackagesLambdaName, lambdas[ListMentorPackagesLambdaName], cognitoAuthorizer);
+
+    // For dynamic paths like /packages/{packageId}
+    addApiResource(api, 'GET', GetPackageLambdaName, lambdas[GetPackageLambdaName], cognitoAuthorizer, 'packageId');
+    addApiResource(api, 'DELETE',DeletePackageLambdaName , lambdas[DeletePackageLambdaName], cognitoAuthorizer, 'packageId');
 }
 
 function addApiResource(
@@ -64,9 +72,14 @@ function addApiResource(
     method: string,
     resourceName: string,
     lambdaFunction: lambda.Function,
-    cognitoAuthorizer: apigateway.IAuthorizer | null
+    cognitoAuthorizer: apigateway.IAuthorizer | null,
+    pathParameter?: string
 ): void {
-    const resource = api.root.addResource(resourceName);
+    let resource = api.root.addResource(resourceName);
+
+    if (pathParameter) {
+        resource = resource.addResource(`{${pathParameter}}`);
+    }
 
     const methodOptions: apigateway.MethodOptions = cognitoAuthorizer
         ? {
@@ -77,3 +90,4 @@ function addApiResource(
 
     resource.addMethod(method, new apigateway.LambdaIntegration(lambdaFunction), methodOptions);
 }
+
