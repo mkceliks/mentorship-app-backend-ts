@@ -29,15 +29,10 @@ export async function CreatePackageHandler(event: APIGatewayProxyEvent): Promise
         }
 
         const payload = decodeAndValidateIDToken(idToken);
-        const mentorId = payload.sub;
         const role = payload['custom:role'];
 
-        // Validate user_id header against token
-        if (userIdHeader !== mentorId) {
-            return clientError(403, 'User ID does not match the authenticated user');
-        }
 
-        if (!mentorId || role !== 'Mentor') {
+        if (role !== 'Mentor') {
             return clientError(403, 'Only mentors can create packages');
         }
 
@@ -55,7 +50,7 @@ export async function CreatePackageHandler(event: APIGatewayProxyEvent): Promise
             new PutItemCommand({
                 TableName: tableName,
                 Item: {
-                    MentorId: { S: mentorId },
+                    MentorId: { S: userIdHeader },
                     PackageId: { S: packageId },
                     PackageName: { S: packageName },
                     Description: { S: description || '' },
