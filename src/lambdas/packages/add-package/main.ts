@@ -9,7 +9,7 @@ import {handlerWrapper} from "../../../wrapper/handler-wrapper";
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const dynamoDBClient = new DynamoDBClient({ region: config.region });
-const tableName = process.env.PACKAGES_TABLE_NAME || '';
+const tableName = process.env.DDB_TABLE_NAME || '';
 
 export async function CreatePackageHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
