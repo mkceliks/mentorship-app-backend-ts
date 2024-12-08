@@ -5,7 +5,6 @@ import { validateAuthorizationHeader, decodeAndValidateIDToken } from '../../../
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersDelete } from '../../../wrapper/response-wrapper';
 import {handlerWrapper} from "../../../wrapper/handler-wrapper";
-import {CreatePackageHandler} from "../add-package/main";
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const dynamoDBClient = new DynamoDBClient({ region: config.region });
