@@ -19,6 +19,7 @@ export async function CreatePackageHandler(event: APIGatewayProxyEvent): Promise
         if (!authorizationHeader) {
             return clientError(401, 'Missing Authorization header');
         }
+
         if (!userIdHeader) {
             return clientError(400, 'Missing x-user-id header');
         }

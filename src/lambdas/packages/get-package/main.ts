@@ -14,6 +14,8 @@ const tableName = process.env.PACKAGES_TABLE_NAME || '';
 export async function GetPackagesHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
         const authorizationHeader = event.headers['Authorization'];
+        const userIdHeader = event.headers['x-user-id'];
+
         if (!authorizationHeader) {
             return clientError(401, 'Missing Authorization header');
         }
@@ -23,11 +25,14 @@ export async function GetPackagesHandler(event: APIGatewayProxyEvent): Promise<A
             return clientError(401, 'Invalid Authorization header');
         }
 
+        if (!userIdHeader) {
+            return clientError(400, 'Missing x-user-id header');
+        }
+
         const payload = decodeAndValidateIDToken(idToken);
-        const mentorId = payload.sub;
         const role = payload['custom:role'];
 
-        if (!mentorId || role !== 'Mentor') {
+        if (role !== 'Mentor') {
             return clientError(403, 'Only mentors can retrieve packages');
         }
 
@@ -37,7 +42,7 @@ export async function GetPackagesHandler(event: APIGatewayProxyEvent): Promise<A
                     TableName: tableName,
                     KeyConditionExpression: 'MentorId = :mentorId',
                     ExpressionAttributeValues: {
-                        ':mentorId': { S: mentorId },
+                        ':mentorId': { S: userIdHeader },
                     },
                 })
             );
