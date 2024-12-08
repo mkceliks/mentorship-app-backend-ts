@@ -1,11 +1,10 @@
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda';
-import { DynamoDBClient, QueryCommand } from '@aws-sdk/client-dynamodb';
+import { DynamoDBClient, QueryCommand, QueryCommandOutput } from '@aws-sdk/client-dynamodb';
 import { AppConfig } from '../../../../config/config';
 import { validateAuthorizationHeader, decodeAndValidateIDToken } from '../../../validator/validator';
 import { clientError, serverError } from '../../../errors/error';
 import { setHeadersGet } from '../../../wrapper/response-wrapper';
-import {handlerWrapper} from "../../../wrapper/handler-wrapper";
-import {DeletePackageHandler} from "../delete-package/main";
+import { handlerWrapper } from '../../../wrapper/handler-wrapper';
 
 const config = AppConfig.loadConfig(process.env.ENVIRONMENT || 'staging');
 const dynamoDBClient = new DynamoDBClient({ region: config.region });
@@ -13,11 +12,15 @@ const tableName = process.env.PACKAGES_TABLE_NAME || '';
 
 export async function GetPackagesHandler(event: APIGatewayProxyEvent): Promise<APIGatewayProxyResult> {
     try {
-        const authorizationHeader = event.headers['Authorization'];
-        const userIdHeader = event.headers['x-user-id'];
+        const authorizationHeader = event.headers['Authorization'] || event.headers['authorization'];
+        const userIdHeader = event.headers['x-user-id'] || event.headers['X-User-Id'];
 
         if (!authorizationHeader) {
             return clientError(401, 'Missing Authorization header');
+        }
+
+        if (!userIdHeader) {
+            return clientError(400, 'Missing x-user-id header');
         }
 
         const idToken = validateAuthorizationHeader(authorizationHeader);
@@ -25,19 +28,17 @@ export async function GetPackagesHandler(event: APIGatewayProxyEvent): Promise<A
             return clientError(401, 'Invalid Authorization header');
         }
 
-        if (!userIdHeader) {
-            return clientError(400, 'Missing x-user-id header');
-        }
-
         const payload = decodeAndValidateIDToken(idToken);
         const role = payload['custom:role'];
 
         if (role !== 'Mentor') {
+            console.error('Unauthorized role:', role);
             return clientError(403, 'Only mentors can retrieve packages');
         }
 
         try {
-            const queryResult = await dynamoDBClient.send(
+            console.log(`Querying packages for MentorId: ${userIdHeader}`);
+            const queryResult: QueryCommandOutput = await dynamoDBClient.send(
                 new QueryCommand({
                     TableName: tableName,
                     KeyConditionExpression: 'MentorId = :mentorId',
@@ -47,14 +48,16 @@ export async function GetPackagesHandler(event: APIGatewayProxyEvent): Promise<A
                 })
             );
 
+            console.log('Query result:', queryResult);
+
             const packages = queryResult.Items?.map((item) => ({
-                packageId: item.PackageId.S,
-                packageName: item.PackageName.S,
-                description: item.Description.S,
-                price: Number(item.Price.N),
-                createdAt: item.CreatedAt.S,
-                updatedAt: item.UpdatedAt.S,
-            }));
+                packageId: item?.PackageId?.S || 'N/A',
+                packageName: item?.PackageName?.S || 'N/A',
+                description: item?.Description?.S || 'N/A',
+                price: item?.Price?.N ? Number(item.Price.N) : 0,
+                createdAt: item?.CreatedAt?.S || 'N/A',
+                updatedAt: item?.UpdatedAt?.S || 'N/A',
+            })) || [];
 
             return {
                 statusCode: 200,
@@ -62,7 +65,12 @@ export async function GetPackagesHandler(event: APIGatewayProxyEvent): Promise<A
                 body: JSON.stringify({ packages }),
             };
         } catch (err: any) {
-            console.error('Failed to retrieve packages:', err);
+            console.error('DynamoDB Query Error:', {
+                TableName: tableName,
+                KeyConditionExpression: 'MentorId = :mentorId',
+                ExpressionAttributeValues: { ':mentorId': { S: userIdHeader } },
+                Error: err,
+            });
             return serverError('Failed to retrieve packages');
         }
     } catch (err: any) {
