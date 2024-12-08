@@ -15,6 +15,8 @@ export async function ListPackagesHandler(event: APIGatewayProxyEvent): Promise<
         const authorizationHeader = event.headers['Authorization'] || event.headers['authorization'];
         const userIdHeader = event.headers['x-user-id'] || event.headers['X-User-Id'];
 
+        console.log("Headers received:", { authorizationHeader, userIdHeader });
+
         if (!authorizationHeader) {
             return clientError(401, 'Missing Authorization header');
         }
@@ -29,54 +31,46 @@ export async function ListPackagesHandler(event: APIGatewayProxyEvent): Promise<
         }
 
         const payload = decodeAndValidateIDToken(idToken);
-        const role = payload['custom:role'];
+        console.log("Decoded payload:", payload);
 
+        const role = payload['custom:role'];
         if (role !== 'Mentor') {
-            console.error('Unauthorized role:', role);
+            console.error("Unauthorized role:", role);
             return clientError(403, 'Only mentors can retrieve packages');
         }
 
-        try {
-            console.log(`Querying packages for MentorId: ${userIdHeader}`);
-            const queryResult: QueryCommandOutput = await dynamoDBClient.send(
-                new QueryCommand({
-                    TableName: tableName,
-                    KeyConditionExpression: 'MentorId = :mentorId',
-                    ExpressionAttributeValues: {
-                        ':mentorId': { S: userIdHeader },
-                    },
-                })
-            );
-
-            console.log('Query result:', queryResult);
-
-            const packages = queryResult.Items?.map((item) => ({
-                packageId: item?.PackageId?.S || 'N/A',
-                packageName: item?.PackageName?.S || 'N/A',
-                description: item?.Description?.S || 'N/A',
-                price: item?.Price?.N ? Number(item.Price.N) : 0,
-                createdAt: item?.CreatedAt?.S || 'N/A',
-                updatedAt: item?.UpdatedAt?.S || 'N/A',
-            })) || [];
-
-            return {
-                statusCode: 200,
-                headers: setHeadersGet(''),
-                body: JSON.stringify({ packages }),
-            };
-        } catch (err: any) {
-            console.error('DynamoDB Query Error:', {
+        console.log(`Querying packages for MentorId: ${userIdHeader}`);
+        const queryResult: QueryCommandOutput = await dynamoDBClient.send(
+            new QueryCommand({
                 TableName: tableName,
                 KeyConditionExpression: 'MentorId = :mentorId',
-                ExpressionAttributeValues: { ':mentorId': { S: userIdHeader } },
-                Error: err,
-            });
-            return serverError('Failed to retrieve packages');
-        }
+                ExpressionAttributeValues: {
+                    ':mentorId': { S: userIdHeader },
+                },
+            })
+        );
+
+        console.log("DynamoDB Query Result:", queryResult);
+
+        const packages = queryResult.Items?.map((item) => ({
+            packageId: item?.PackageId?.S || 'N/A',
+            packageName: item?.PackageName?.S || 'N/A',
+            description: item?.Description?.S || 'N/A',
+            price: item?.Price?.N ? Number(item.Price.N) : 0,
+            createdAt: item?.CreatedAt?.S || 'N/A',
+            updatedAt: item?.UpdatedAt?.S || 'N/A',
+        })) || [];
+
+        return {
+            statusCode: 200,
+            headers: setHeadersGet(''),
+            body: JSON.stringify({ packages }),
+        };
     } catch (err: any) {
-        console.error('Unexpected error in ListPackagesHandler:', err);
+        console.error("Unexpected error in ListPackagesHandler:", err);
         return serverError(err.message || 'An unexpected error occurred');
     }
 }
+
 
 export const handler = handlerWrapper(ListPackagesHandler, '#packages', 'ListPackagesHandler');
