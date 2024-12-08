@@ -74,7 +74,7 @@ export async function ListPackagesHandler(event: APIGatewayProxyEvent): Promise<
             return serverError('Failed to retrieve packages');
         }
     } catch (err: any) {
-        console.error('Unexpected error in GetPackagesHandler:', err);
+        console.error('Unexpected error in ListPackagesHandler:', err);
         return serverError(err.message || 'An unexpected error occurred');
     }
 }
